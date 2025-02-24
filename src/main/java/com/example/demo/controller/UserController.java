@@ -38,12 +38,6 @@ public class UserController {
 		model.addAttribute("user", new User());
 		return "homepage";
 	}
-
-	@GetMapping("/user/newtrip")
-	public String showNewTrip(Model model) {
-		model.addAttribute("trip", new Trip());
-		return "newtrip";
-	}
 	
 	@PostMapping("/user/validate")
 	public String saveUserForm(User user, RedirectAttributes redi) {

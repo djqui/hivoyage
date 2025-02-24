@@ -169,29 +169,30 @@ body {
 	</header>
 
     <div class="container">
-        <h1>Plan a new trip</h1>
+        <h1>Plan a New Trip</h1>
         <p>Start planning your trip by filling in the details below!</p>
-        <form>
+        <form th:action="@{/user/saveTrip}" th:object="${trip}" method="post">
             <div class="form-group">
                 <label for="destination">Where to?</label>
-                <input id="destination" type="text" placeholder="e.g Japan, South Korea">
+                <input id="destination" type="text" placeholder="e.g Japan, South Korea" th:field="*{destination}" />
             </div>
             <div class="form-group">
                 <label for="dates">Dates</label>
                 <div class="input-group">
                     <div class="input-icon">
-                        <input id="start-date" type="date" placeholder="Start Date">
+                        <input id="start-date" type="date" placeholder="Start Date" th:field="*{startDate}" />
                     </div>
                     <div class="input-icon">
-                        <input id="end-date" type="date" placeholder="End Date">
+                        <input id="end-date" type="date" placeholder="End Date" th:field="*{endDate}" />
                     </div>
                 </div>
             </div>
             <div class="form-group">
-                <button class="button" type="button">Create</button>
+                <button class="button" type="submit">Create</button>
             </div>
         </form>
     </div>
+    
 
 </body>
 </html>

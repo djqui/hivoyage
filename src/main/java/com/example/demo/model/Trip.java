@@ -1,21 +1,30 @@
 package com.example.demo.model;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.Column;
 import java.time.LocalDate;
 
 @Entity
+@Table(name = "trips")
 public class Trip {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
+    @Column(nullable = false, length = 100)
     private String destination;
+
     private LocalDate startDate;
     private LocalDate endDate;
 
     // Constructors
-    public Trip() {}
-    
+    public Trip() { }
+
     public Trip(String destination, LocalDate startDate, LocalDate endDate) {
         this.destination = destination;
         this.startDate = startDate;
