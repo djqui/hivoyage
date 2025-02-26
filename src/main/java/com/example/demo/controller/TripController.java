@@ -27,6 +27,6 @@ public class TripController {
     public String saveTrip(Trip trip, RedirectAttributes redi) {
         tripService.save(trip);
         redi.addFlashAttribute("message", "Trip has been saved successfully!");
-        return "redirect:/welcome"; // Redirect to a confirmation page or trip list
+        return "redirect:/user/homepage";
     }
 }
