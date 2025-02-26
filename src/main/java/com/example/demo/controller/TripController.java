@@ -19,7 +19,7 @@ public class TripController {
     @GetMapping("/user/newtrip")
     public String showNewTrip(Model model) {
         model.addAttribute("trip", new Trip());
-        return "newtrip"; // This refers to newtrip.html
+        return "newtrip";
     }
     
     // Step 2: Process form submission
