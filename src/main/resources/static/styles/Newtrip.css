@@ -1,0 +1,145 @@
+@import url('https://fonts.googleapis.com/css2?family=Liter&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&display=swap');
+
+:root {
+	--mainclr: #fffef1;
+	--secclr: #dd2525;
+	--mainfont: "Liter", sans-serif;
+}
+
+header {
+    color: var(--secclr);
+    width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 1000;
+}
+
+.header-wrapper {
+	display: flex;
+    align-items: center;
+    justify-content: space between;
+    max-width: 100%;
+    margin: 20px;
+}
+
+.logo {
+    font-size: 1.5rem;
+    margin: 20px;
+    font-weight: bold;
+}
+
+.header-nav {
+    list-style: none;
+    display: flex;
+    gap: 30px;
+    margin: 0;
+    padding: 0;
+}
+
+.header-nav li {
+    display: inline;
+}
+
+.header-nav a {
+    text-decoration: none;
+    color: var(--secclr);
+    font-size: 1.1rem;
+    padding: 10px;
+}
+
+.header-nav a:hover {
+    color: black;
+}
+
+body {
+    background-color: var(--mainclr);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    color: var(--secclr);
+    font-family: var(--mainfont);
+}
+
+.container {
+            width: 100%;
+            max-width: 400px;
+            padding: 32px;
+        }
+        h1 {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: var(--secclr)
+        }
+        p {
+            font-size: 16px;
+            color: var(--secclr);
+            margin-bottom: 24px;
+        }
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-group label {
+            display: block;
+            color: var(--secclr);
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--secclr);
+            border-radius: 4px;
+            background-color: var(--mainclr);
+            color: var(--secclr);
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .form-group .input-group {
+            display: flex;
+            gap: 8px;
+        }
+        .form-group .input-group .input-icon {
+            display: flex;
+            align-items: center;
+            border: 1px solid var(--secclr);
+            border-radius: 4px;
+            padding: 0 12px;
+            width: 100%;
+            height: 44px;
+            box-sizing: border-box;
+        }
+
+        .form-group .input-group .input-icon input {
+            border: none;
+            outline: none;
+            width: 100%;
+            height: 100%;
+            padding: 12px 0;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: var(--mainclr);
+            font-family: var(--mainfont);
+            color: var(--secclr);
+            padding: 10px 20px;
+            border: solid 2px;
+            border-radius: 10px;
+            cursor: pointer;
+            width: 100%;
+            margin: 10px 0;
+            font-size: 1rem;
+        }
+
+        button:hover {
+            background-color: var(--secclr);
+            color: var(--mainclr);
+        }

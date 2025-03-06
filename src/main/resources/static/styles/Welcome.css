@@ -1,0 +1,115 @@
+@import url('https://fonts.googleapis.com/css2?family=Liter&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&display=swap');
+
+:root {
+	--mainclr: #fffef1;
+	--secclr: #dd2525;
+	--mainfont: "Liter", sans-serif;
+}
+
+header {
+    color: var(--secclr);
+    width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 1000;
+}
+
+.header-wrapper {
+	display: flex;
+    align-items: center;
+    justify-content: space between;
+    max-width: 100%;
+    margin: 20px;
+}
+
+.logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin: 20px;
+}
+
+.header-nav {
+    list-style: none;
+    display: flex;
+    gap: 30px;
+    margin: 0;
+    padding: 0;
+}
+
+.header-nav li {
+    display: inline;
+}
+
+.header-nav a {
+    text-decoration: none;
+    color: var(--secclr);
+    font-size: 1.1rem;
+    padding: 10px;
+}
+
+.header-nav a:hover {
+    color: black;
+}
+
+body {
+    background-color: var(--mainclr);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    font-family: var(--mainfont);
+}
+
+div.container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1000px;
+    gap: 20px;
+}
+
+div.left {
+    width: 50%;
+    padding-left: 50px;
+}
+
+div.right {
+    width: 50%;
+    padding-right: 50px;
+}
+
+h1 {
+    font-size: 2rem;
+    color: var(--secclr);
+    font-weight: bold;
+}
+
+p {
+    font-size: 1.25rem;
+    color: var(--secclr);
+    margin: 20px 0;
+    text-align: justify;
+}
+
+button {
+    background-color: var(--mainclr);
+    color: var(--secclr);
+    font-family: var(--mainfont);
+    padding: 10px 20px;
+    border: solid 2px;
+    border-radius: 10px;
+    cursor: pointer;
+    width: 100%;
+    margin: 5px 0;
+    font-size: 1rem;
+}
+
+button:hover {
+    background-color: var(--secclr);
+    color: var(--mainclr);
+}

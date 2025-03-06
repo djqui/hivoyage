@@ -8,12 +8,14 @@ import com.example.demo.repository.UserRepository;
 
 @Service
 public class UserService {
-	@Autowired
-	private UserRepository repo;
-	
-	public String save (User user) {
-		repo.save(user);
-		return "redirect:/welcome";
-	}
-	
+
+    @Autowired
+    private UserRepository repo;
+
+    public void save(User user) {
+        if (!user.getPassword().equals(user.getConfirmPassword())) {
+            throw new IllegalArgumentException("Passwords do not match!");
+        }
+        repo.save(user);
+    }
 }
