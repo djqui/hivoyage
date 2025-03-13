@@ -5,74 +5,84 @@ import jakarta.persistence.*;
 @Entity
 @Table(name="users")
 public class User {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-    
+
     @Column(nullable = false, length = 45, unique = true)
     private String email;
-    
-    @Column(nullable = false, length = 255)  // Increased length for password hashing
+
+    @Column(nullable = false, length = 255)  
     private String password;
-    
+
     @Column(nullable = false, name = "first_name", length = 45)
     private String firstName;
-    
+
     @Column(nullable = false, name = "last_name", length = 45)
     private String lastName;
 
     @Transient
     private String confirmPassword;
 
-	// Getters and Setters
+    @Column(name = "reset_token", unique = true)
+    private String resetToken;
 
-	public Integer getId() {
-		return id;
-	}
+    // Getters and Setters
 
-	public void setId(Integer id) {
-		this.id = id;
-	}
+    public Integer getId() {
+        return id;
+    }
 
-	public String getEmail() {
-		return email;
-	}
+    public void setId(Integer id) {
+        this.id = id;
+    }
 
-	public void setEmail(String email) {
-		this.email = email;
-	}
+    public String getEmail() {
+        return email;
+    }
 
-	public String getPassword() {
-		return password;
-	}
+    public void setEmail(String email) {
+        this.email = email;
+    }
 
-	public void setPassword(String password) {
-		this.password = password;
-	}
+    public String getPassword() {
+        return password;
+    }
 
-	public String getFirstName() {
-		return firstName;
-	}
+    public void setPassword(String password) {
+        this.password = password;
+    }
 
-	public void setFirstName(String firstName) {
-		this.firstName = firstName;
-	}
+    public String getFirstName() {
+        return firstName;
+    }
 
-	public String getLastName() {
-		return lastName;
-	}
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
 
-	public void setLastName(String lastName) {
-		this.lastName = lastName;
-	}
+    public String getLastName() {
+        return lastName;
+    }
 
-	public String getConfirmPassword() {
-		return confirmPassword;
-	}
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
 
-	public void setConfirmPassword(String confirmPassword) {
-		this.confirmPassword = confirmPassword;
-	}
-	
+    public String getConfirmPassword() {
+        return confirmPassword;
+    }
+
+    public void setConfirmPassword(String confirmPassword) {
+        this.confirmPassword = confirmPassword;
+    }
+
+    public String getResetToken() {
+        return resetToken;
+    }
+
+    public void setResetToken(String resetToken) {
+        this.resetToken = resetToken;
+    }
 }

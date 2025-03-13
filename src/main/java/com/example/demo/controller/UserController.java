@@ -56,7 +56,39 @@ public class UserController {
         if (logout != null) {
             model.addAttribute("logoutMessage", "You have been logged out.");
         }
+
         return "login";
+    }
+
+    @GetMapping("/forgotpassword")  // Updated route
+    public String showForgotPasswordPage() {
+        return "forgotpassword";
+    }
+
+    @PostMapping("/forgotpassword")  // Updated route
+    public String forgotPassword(@RequestParam String email, Model model) {
+        userService.generateResetToken(email);
+        model.addAttribute("message", "Password reset link sent if email exists.");
+        return "forgotpassword";
+    }
+
+    @GetMapping("/resetpassword")
+    public String showResetPasswordForm(@RequestParam String token, Model model) {
+        System.out.println("🛠 Received token for reset page: " + token);
+        model.addAttribute("token", token);
+        return "resetpassword"; // This should match your HTML filename
+    }
+    
+
+    @PostMapping("/resetpassword")  // Updated route
+    public String resetPassword(@RequestParam String token, @RequestParam String password, Model model) {
+        boolean success = userService.resetPassword(token, password);
+        if (success) {
+            return "redirect:/login?resetSuccess";
+        } else {
+            model.addAttribute("error", "Invalid or expired token.");
+            return "resetpassword";
+        }
     }
 
     @GetMapping("/user/homepage")
