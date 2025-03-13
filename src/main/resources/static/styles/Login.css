@@ -131,3 +131,9 @@ a {
 	color: var(--secclr);
 	text-decoration: none;
 }
+
+p {
+    font-size: 14px;
+    text-align: center;
+    color: var(--secclr);
+}

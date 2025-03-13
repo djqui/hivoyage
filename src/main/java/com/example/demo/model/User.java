@@ -1,33 +1,31 @@
 package com.example.demo.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name="users")
 public class User {
-	@Id
-	@GeneratedValue (strategy = GenerationType.IDENTITY)
-	
-	@Column(nullable = false, unique = true)
-	private Integer id;
-	
-	@Column(nullable = false, length = 45)
-	private String email;
-	
-	@Column(nullable = false, length = 45)
-	private String password;
-	
-	@Column(nullable = false, name = "first_name", length = 45)
-	private String firstName;
-	
-	@Column(nullable = false, name = "last_name", length = 45)
-	private String lastName;
+    
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+    
+    @Column(nullable = false, length = 45, unique = true)
+    private String email;
+    
+    @Column(nullable = false, length = 255)  // Increased length for password hashing
+    private String password;
+    
+    @Column(nullable = false, name = "first_name", length = 45)
+    private String firstName;
+    
+    @Column(nullable = false, name = "last_name", length = 45)
+    private String lastName;
+
+    @Transient
+    private String confirmPassword;
+
+	// Getters and Setters
 
 	public Integer getId() {
 		return id;
@@ -68,9 +66,6 @@ public class User {
 	public void setLastName(String lastName) {
 		this.lastName = lastName;
 	}
-
-	@Transient
-	private String confirmPassword;
 
 	public String getConfirmPassword() {
 		return confirmPassword;
