@@ -60,12 +60,12 @@ public class UserController {
         return "login";
     }
 
-    @GetMapping("/forgotpassword")  // Updated route
+    @GetMapping("/forgotpassword")
     public String showForgotPasswordPage() {
         return "forgotpassword";
     }
 
-    @PostMapping("/forgotpassword")  // Updated route
+    @PostMapping("/forgotpassword")
     public String forgotPassword(@RequestParam String email, Model model) {
         userService.generateResetToken(email);
         model.addAttribute("message", "Password reset link sent if email exists.");
