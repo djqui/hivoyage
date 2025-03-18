@@ -25,14 +25,33 @@
 
 	<div class="container">
 		<h1> Log into your account </h1>
+	
+    <!-- Success Message for Email Verification -->
+    <div th:if="${param.verified}" style="color: green;">
+        <p>✅ Your email has been verified! You can now log in.</p>
+    </div>
+
+    <!-- Success Message (For Password Reset & Signup) -->
+    <div th:if="${successMessage}" style="color: green;">
+        <p th:text="${successMessage}"></p>
+    </div>
+
+    <!-- Error Message -->
+    <div th:if="${errorMessage}" style="color: red;">
+        <p th:text="${errorMessage}"></p>
+    </div>
+
+    <!-- Logout Message -->
+    <div th:if="${logoutMessage}" style="color: blue;">
+        <p th:text="${logoutMessage}"></p>
+    </div>
+		
 		<form th:action="@{/login}" method="post">
 			<input type="email" name="username" placeholder="Email" required />
 			<input type="password" name="password" placeholder="Password" required />
 			<button type="submit">Login</button>
-			<p th:if="${param.error}" style="color: red;">Invalid email or password. Please try again.</p>
-			<p th:if="${param.logout}" style="color: green;">You have been logged out successfully.</p>
 		</form>
-		<a href="/user/signup"> Don't have an account yet?</a>
+		<a href="/signup"> Don't have an account yet?</a>
 		<a href="/forgotpassword"> Forgot your Password?</a>
 	</div>
 
