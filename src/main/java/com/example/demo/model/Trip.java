@@ -1,12 +1,9 @@
 package com.example.demo.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.Column;
+import jakarta.persistence.*;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "trips")
@@ -22,8 +19,18 @@ public class Trip {
     private LocalDate startDate;
     private LocalDate endDate;
 
+    // Countdown is not stored in the database
+    @Transient
+    private String countdown;
+
+    @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ItineraryItem> itinerary = new ArrayList<>();
+
+    @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PackingItem> packingList = new ArrayList<>();
+
     // Constructors
-    public Trip() { }
+    public Trip() {}
 
     public Trip(String destination, LocalDate startDate, LocalDate endDate) {
         this.destination = destination;
@@ -31,7 +38,7 @@ public class Trip {
         this.endDate = endDate;
     }
 
-    // Getters and setters
+    // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -43,4 +50,13 @@ public class Trip {
 
     public LocalDate getEndDate() { return endDate; }
     public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
+
+    public String getCountdown() { return countdown; }
+    public void setCountdown(String countdown) { this.countdown = countdown; }
+
+    public List<ItineraryItem> getItinerary() { return itinerary; }
+    public void setItinerary(List<ItineraryItem> itinerary) { this.itinerary = itinerary; }
+
+    public List<PackingItem> getPackingList() { return packingList; }
+    public void setPackingList(List<PackingItem> packingList) { this.packingList = packingList; }
 }

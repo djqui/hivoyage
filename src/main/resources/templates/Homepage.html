@@ -1,25 +1,109 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>HiVoyage</title>
-<link rel="stylesheet" th:href="@{/styles/Homepage.css}"></link>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HiVoyage</title>
+    <link rel="stylesheet" href="/styles/Homepage.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
 </head>
 <body>
 
-	<header>
-	    <div class="logo">
-	        HiVoyage
-	    </div>
-	    
-	    <nav class="header-wrapper">
-	        <ul class="header-nav">
-	            <li><a href="/welcome">Home</a></li>
-	            <li><a href="/user/travelguides">Travel Guides</a></li>
-	            <li><a href="/user/newtrip">New Trip</a></li>
-	        </ul>
-	    </nav>
-	</header>
+    <header>
+        <div class="logo">HiVoyage</div>
+        <nav class="header-wrapper">
+            <ul class="header-nav">
+                <li><a href="/user/homepage">Dashboard</a></li>
+                <li><a href="/user/travelguides">Travel Guides</a></li>
+            </ul>
+        </nav>
+    </header>
+
+	<main>
+		<!-- Current Trips Section -->
+		<section class="trips-section">
+			<h2>Current Trips</h2>
+			<p>Enjoy your journey! Click for details.</p>
+			<div class="trips-container">
+				<ul>
+					<li th:each="trip : ${trips}" 
+						th:if="${trip.startDate.isBefore(T(java.time.LocalDate).now()) 
+							and trip.endDate.isAfter(T(java.time.LocalDate).now())}">
+						<a th:href="@{/user/trip/{id}(id=${trip.id})}" class="trip-card current-trip-card">
+							<h3 th:text="${trip.destination}"></h3>
+							<p>
+								<i class="fa-solid fa-calendar-days"></i>
+								<span th:text="${#temporals.format(trip.startDate, 'MM/dd')} + ' - ' + ${#temporals.format(trip.endDate, 'MM/dd')}"></span>
+							</p>
+							<p class="trip-status">In Progress</p>
+						</a>
+					</li>
+				</ul>
+			</div>
+		</section>
+	
+		<!-- Upcoming Trips Section -->
+		<section class="trips-section">
+			<h2>Upcoming Trips</h2>
+			<p>Click to see more details about the trip!</p>
+			<div class="trips-container">
+				<ul>
+					<li th:each="trip : ${trips}" 
+						th:if="${trip.startDate.isAfter(T(java.time.LocalDate).now())}">
+						<a th:href="@{/user/trip/{id}(id=${trip.id})}" class="trip-card">
+							<h3 th:text="${trip.destination}"></h3>
+							<p>
+								<i class="fa-solid fa-calendar-days"></i>
+								<span th:text="${#temporals.format(trip.startDate, 'MM/dd')} + ' - ' + ${#temporals.format(trip.endDate, 'MM/dd')}"></span>
+							</p>
+							<p th:text="'D-' + ${T(java.time.temporal.ChronoUnit).DAYS.between(T(java.time.LocalDate).now(), trip.startDate)}">
+							</p>
+						</a>
+					</li>
+	
+					<!-- New Trip Button -->
+					<li>
+						<a href="/user/newtrip" class="trip-card new-trip-card">
+							<h3>+ New Trip</h3>
+							<p>Click to plan your next adventure!</p>
+						</a>
+					</li>
+				</ul>
+			</div>
+		</section>
+	
+		<!-- 📌 Lists Section - Moved Here -->
+		<section class="lists-section">
+			<h2>Lists</h2>
+			<p>Click to update the lists!</p>
+			<div class="lists-container">
+				<!-- Placeholder for user-defined lists -->
+			</div>
+		</section>
+	
+		<!-- Past Trips Section -->
+		<section class="trips-section">
+			<h2>Past Trips</h2>
+			<p>Click to revisit memories from completed trips!</p>
+			<div class="trips-container">
+				<ul>
+					<li th:each="trip : ${trips}" 
+						th:if="${trip.endDate.isBefore(T(java.time.LocalDate).now())}">
+						<a th:href="@{/user/trip/{id}(id=${trip.id})}" class="trip-card past-trip-card">
+							<h3 th:text="${trip.destination}"></h3>
+							<p>
+								<i class="fa-solid fa-calendar-days"></i>
+								<span th:text="${#temporals.format(trip.startDate, 'MM/dd')} + ' - ' + ${#temporals.format(trip.endDate, 'MM/dd')}"></span>
+							</p>
+							<p class="trip-status">Completed</p>
+						</a>
+					</li>
+				</ul>
+			</div>
+		</section>
+	</main>
+	
 
 </body>
 </html>

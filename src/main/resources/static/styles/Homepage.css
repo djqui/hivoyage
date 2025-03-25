@@ -8,6 +8,7 @@
 
 header {
     color: var(--secclr);
+    background-color: var(--mainclr);
     width: 100%;
     position: fixed;
     top: 0;
@@ -16,6 +17,10 @@ header {
     align-items: center;
     justify-content: space-between;
     z-index: 1000;
+}
+
+main {
+    padding-top: 200px; /* Adjust this value based on your header's height */
 }
 
 .header-wrapper {
@@ -63,4 +68,100 @@ body {
     height: 100vh;
     margin: 0;
     font-family: var(--mainfont);
+    color: var(--secclr);
+}
+
+h2 {
+    margin: 10px 0; /* Adds space above and below */
+    text-align: center; /* Centers the heading */
+    font-size: 1.5rem; /* Adjusts font size */
+}
+
+p {
+    margin: 5px 0; /* Adds space between paragraphs */
+    padding: 0 10px; /* Prevents text from touching edges */
+    text-align: center; /* Centers paragraph text */
+    font-size: 1rem; /* Keeps it readable */
+    line-height: 1.5; /* Improves readability */
+}
+
+.trips-container {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    justify-content: center; /* Center align the trips */
+}
+
+.trips-container ul {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: stretch;
+    gap: 15px;
+    padding: 0;
+    max-width: 900px; /* Limits to 3 cards per row */
+}
+
+/* Ensure each trip card takes up equal space */
+.trips-container li {
+    background: var(--mainclr);
+    border: 2px solid var(--secclr);
+    border-radius: 10px;
+    padding: 15px;
+    width: 180px;
+    text-align: center;
+    font-weight: bold;
+    transition: transform 0.2s ease-in-out;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 150px;
+}
+
+.trips-container li:hover {
+    transform: scale(1.05);
+}
+
+.trips-container a {
+    text-decoration: none;
+    color: var(--secclr);
+
+    /* Make sure the anchor fills the list item */
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Vertical centering */
+    align-items: center; /* Horizontal centering */
+    width: 100%;
+    height: 100%;
+}
+
+
+.trips-container h3 {
+    margin: 0;
+    font-size: 1.3rem;
+}
+
+.trips-container p {
+    margin: 5px 0;
+    font-size: .85rem;
+    font-weight: normal;
+}
+
+/* Responsive Fix for Smaller Screens */
+@media (max-width: 600px) {
+    .trips-container ul {
+        max-width: 400px; /* Adjust for smaller screens */
+    }
+    
+    .trips-container li {
+        width: 45%; /* 2 cards per row on smaller screens */
+    }
+}
+
+@media (max-width: 400px) {
+    .trips-container li {
+        width: 100%; /* 1 card per row on very small screens */
+    }
 }

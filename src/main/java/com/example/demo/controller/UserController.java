@@ -19,12 +19,6 @@ public class UserController {
         return "welcome";
     }
 
-    @GetMapping("/user/homepage")
-    public String showHomePage(Model model) {
-        model.addAttribute("user", new User());
-        return "homepage";
-    }
-
     @GetMapping("/signup")
     public String showSignupPage(Model model) {
         model.addAttribute("user", new User());

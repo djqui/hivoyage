@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script th:src="@{/scripts/TripDetails.js}"></script>
+    <title>Trip Details</title>
+</head>
+<body>
+
+    <h2>Trip to <span th:text="${trip.destination}"></span></h2>
+    <p>Start Date: <span th:text="${trip.startDate}"></span></p>
+    <p>End Date: <span th:text="${trip.endDate}"></span></p>
+    <p>Status: <span th:text="${daysUntilTrip}"></span></p>
+
+    <section>
+        <h2>Itinerary</h2>
+        <div id="itinerary">
+            
+        </div>
+        <button onclick="addItineraryDay()">+ Add Day</button>
+    </section>
+
+    <section>
+        <h2>Packing List</h2>
+        <ul id="packing-list">
+            <!-- Packing items will be added dynamically -->
+        </ul>
+        <input type="text" id="packing-item" placeholder="Add new item">
+        <button onclick="addPackingItem()">+</button>
+    </section>
+
+</body>
+</html>
