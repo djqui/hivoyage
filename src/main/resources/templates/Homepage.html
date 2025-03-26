@@ -28,7 +28,7 @@
 			<div class="trips-container">
 				<ul>
 					<li th:each="trip : ${trips}" 
-						th:if="${trip.startDate.isBefore(T(java.time.LocalDate).now()) 
+						th:if="${trip.startDate.isBefore(T(java.time.LocalDate).now().plusDays(1)) 
 							and trip.endDate.isAfter(T(java.time.LocalDate).now())}">
 						<a th:href="@{/user/trip/{id}(id=${trip.id})}" class="trip-card current-trip-card">
 							<h3 th:text="${trip.destination}"></h3>
@@ -37,6 +37,13 @@
 								<span th:text="${#temporals.format(trip.startDate, 'MM/dd')} + ' - ' + ${#temporals.format(trip.endDate, 'MM/dd')}"></span>
 							</p>
 							<p class="trip-status">In Progress</p>
+						</a>
+					</li>
+					<!-- Empty state placeholder -->
+					<li th:if="${trips == null || trips.isEmpty() || trips.?[startDate.isBefore(T(java.time.LocalDate).now().plusDays(1)) and endDate.isAfter(T(java.time.LocalDate).now())].isEmpty()}">
+						<a class="trip-card placeholder-card">
+							<h3>No Current Trips</h3>
+							<p>Your current trips will be shown here</p>
 						</a>
 					</li>
 				</ul>
@@ -73,12 +80,20 @@
 			</div>
 		</section>
 	
-		<!-- 📌 Lists Section - Moved Here -->
+		<!-- Lists Section -->
 		<section class="lists-section">
 			<h2>Lists</h2>
 			<p>Click to update the lists!</p>
-			<div class="lists-container">
-				<!-- Placeholder for user-defined lists -->
+			<div class="trips-container">
+				<ul>
+					<!-- Placeholder for user-defined lists -->
+					<li th:if="${#lists.isEmpty(lists)}">
+						<a class="trip-card placeholder-card">
+							<h3>No Lists Yet</h3>
+							<p>Your lists will be shown here</p>
+						</a>
+					</li>
+				</ul>
 			</div>
 		</section>
 	
@@ -97,6 +112,13 @@
 								<span th:text="${#temporals.format(trip.startDate, 'MM/dd')} + ' - ' + ${#temporals.format(trip.endDate, 'MM/dd')}"></span>
 							</p>
 							<p class="trip-status">Completed</p>
+						</a>
+					</li>
+					<!-- Empty state placeholder -->
+					<li th:if="${trips == null || trips.isEmpty() || trips.?[endDate.isBefore(T(java.time.LocalDate).now())].isEmpty()}">
+						<a class="trip-card placeholder-card">
+							<h3>No Past Trips</h3>
+							<p>Your past trips will be shown here</p>
 						</a>
 					</li>
 				</ul>

@@ -1,0 +1,287 @@
+@import url('https://fonts.googleapis.com/css2?family=Liter&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&display=swap');
+
+:root {
+    --mainclr: #fffef1;
+    --secclr: #dd2525;
+    --mainfont: "Liter", sans-serif;
+    --border: #E5E5E5;
+}
+
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--mainclr);
+    margin: 0;
+    font-family: var(--mainfont) !important;
+    color: var(--secclr);
+    line-height: 1.5;
+}
+
+/* Header styles */
+header {
+    color: var(--secclr);
+    background-color: var(--mainclr);
+    width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 1000;
+}
+
+h2 {
+    margin-block: 20px 10px;
+}
+
+.logo {
+    font-size: 1.5rem;
+    margin: 20px;
+    font-weight: bold;
+}
+
+.header-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 100%;
+    margin: 20px;
+}
+
+.header-nav {
+    list-style: none;
+    display: flex;
+    gap: 30px;
+    margin: 0;
+    padding: 0;
+}
+
+.header-nav li {
+    display: inline;
+}
+
+.header-nav a {
+    text-decoration: none;
+    color: var(--secclr);
+    font-size: 1.1rem;
+    padding: 10px;
+}
+
+.header-nav a:hover {
+    color: black;
+}
+
+/* Main content */
+main {
+    padding-top: 100px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+/* Trip info styles */
+main h1 {
+    margin-bottom: 10px;
+}
+
+main p {
+    margin: 5px 0;
+    padding-left: 20px;
+}
+
+main p i {
+    margin-right: 10px;
+}
+
+/* Itinerary section */
+.itinerary-section {
+    margin-top: 2rem;
+}
+
+.all-days {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem;
+    background-color: transparent;
+}
+
+.day-container {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+    background-color: white;
+}
+
+.day-header {
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    background-color: rgba(221, 37, 37, 0.1);
+}
+
+.day-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.day-title {
+    display: flex;
+    flex-direction: column;
+}
+
+.day-text {
+    font-weight: 600;
+    color: var(--secclr);
+}
+
+.day-date {
+    font-size: 0.875rem;
+    color: var(--secclr);
+    opacity: 0.8;
+}
+
+.day-content {
+    padding: 1rem;
+}
+
+/* Stop items */
+.stop-item {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.stop-order {
+    color: var(--secclr);
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.stop-details {
+    flex: 1;
+}
+
+.stop-name {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: var(--secclr);
+}
+
+.stop-address {
+    color: var(--secclr);
+    opacity: 0.8;
+    font-size: 0.875rem;
+    margin-bottom: 0.25rem;
+}
+
+.stop-time {
+    color: var(--secclr);
+    opacity: 0.8;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.stop-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Buttons */
+button {
+    border: none;
+    background: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--mainfont);
+}
+
+.add-place-btn {
+    color: var(--secclr);
+    font-weight: 500;
+    width: 100%;
+    justify-content: center;
+    padding: 0.75rem;
+    border: 1px dashed var(--secclr);
+    border-radius: 8px;
+    margin-top: 1rem;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+
+.add-place-btn:hover {
+    opacity: 1;
+    background-color: rgba(221, 37, 37, 0.05);
+}
+
+.delete-day-btn {
+    color: #ff4444;
+}
+
+.delete-day-btn:hover {
+    background-color: rgba(255, 68, 68, 0.1);
+}
+
+.edit-stop-btn {
+    color: var(--secclr);
+}
+
+.save-stop-btn {
+    color: var(--secclr);
+}
+
+.delete-btn {
+    color: #ff4444;
+}
+
+/* Icons */
+.fas {
+    font-size: 1rem;
+}
+
+.fa-chevron-down {
+    color: var(--secclr);
+    transition: transform 0.2s ease;
+}
+
+.day-container.collapsed .fa-chevron-down {
+    transform: rotate(-90deg);
+}
+
+/* Editing state */
+.stop-item.editing {
+    background-color: rgba(221, 37, 37, 0.05);
+}
+
+.stop-item.editing input {
+    border: 1px solid var(--secclr);
+    padding: 0.5rem;
+    border-radius: 4px;
+    width: 100%;
+    background: white;
+}
+
+/* Add day button - now matches add place button */
+.add-day-btn {
+    margin-top: 1rem;
+    margin-bottom: 0;
+}

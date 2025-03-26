@@ -5,8 +5,10 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.example.demo.model.Trip;
+import com.example.demo.model.ItineraryItem;
 import com.example.demo.service.TripService;
 import lombok.extern.slf4j.Slf4j;
 
@@ -15,6 +17,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.ArrayList;
 
 @Controller
 @Slf4j
@@ -45,20 +48,25 @@ public class TripController {
     // Display all trips on the homepage
     @GetMapping("/user/homepage")
     public String showTrips(Model model) {
+        log.info("Handling homepage request");
         List<Trip> trips = tripService.getAllTrips();
+        log.info("Retrieved {} trips from service", trips.size());
 
         List<Trip> tripsWithCountdown = trips.stream().map(trip -> {
             if (trip.getStartDate() != null) {
                 long daysUntilTrip = ChronoUnit.DAYS.between(LocalDate.now(), trip.getStartDate());
                 daysUntilTrip = Math.max(daysUntilTrip, 0); // Avoid negative countdowns
                 trip.setCountdown("D-" + daysUntilTrip);
+                log.info("Trip {}: Set countdown to {}", trip.getDestination(), trip.getCountdown());
             } else {
                 trip.setCountdown("Date not set");
+                log.info("Trip {}: No start date set", trip.getDestination());
             }
             return trip;
         }).collect(Collectors.toList());
 
         model.addAttribute("trips", tripsWithCountdown);
+        log.info("Added {} trips to model", tripsWithCountdown.size());
         return "homepage";
     }
 
@@ -99,4 +107,70 @@ public class TripController {
         return "tripdetails";
     }
     
+    @PostMapping("/user/trip/{id}/saveItinerary")
+    public String saveItinerary(@PathVariable Long id, @RequestParam("day") int day,
+                               @RequestParam("title") String title,
+                               @RequestParam("location") String location,
+                               @RequestParam("description") String description,
+                               RedirectAttributes redirectAttributes) {
+        log.info("Saving itinerary item for trip {}: day={}, title={}, location={}", id, day, title, location);
+        
+        Trip trip = tripService.getTripById(id);
+        if (trip != null) {
+            ItineraryItem item = new ItineraryItem();
+            item.setDay(day);
+            item.setTitle(title);
+            item.setLocation(location);
+            item.setDescription(description);
+            item.setTrip(trip);
+            
+            // Initialize itinerary list if null
+            if (trip.getItinerary() == null) {
+                trip.setItinerary(new ArrayList<>());
+            }
+            
+            trip.getItinerary().add(item);
+            tripService.save(trip);
+            log.info("Successfully saved itinerary item for trip {}", id);
+            redirectAttributes.addFlashAttribute("message", "Itinerary item saved successfully!");
+        } else {
+            log.error("Trip with ID {} not found", id);
+            redirectAttributes.addFlashAttribute("error", "Trip not found!");
+        }
+        return "redirect:/user/trip/" + id;
+    }
+
+    @PostMapping("/user/trip/{id}/deleteDay")
+    public String deleteDay(@PathVariable Long id, @RequestParam("day") int day,
+                           RedirectAttributes redirectAttributes) {
+        log.info("Deleting day {} from trip {}", day, id);
+        
+        Trip trip = tripService.getTripById(id);
+        if (trip != null && trip.getItinerary() != null) {
+            List<ItineraryItem> itemsToRemove = new ArrayList<>();
+            List<ItineraryItem> itemsToUpdate = new ArrayList<>();
+            
+            // First, identify items to remove and update
+            for (ItineraryItem item : trip.getItinerary()) {
+                if (item.getDay() == day) {
+                    itemsToRemove.add(item);
+                } else if (item.getDay() > day) {
+                    item.setDay(item.getDay() - 1);
+                    itemsToUpdate.add(item);
+                }
+            }
+            
+            // Remove the items for the deleted day
+            trip.getItinerary().removeAll(itemsToRemove);
+            
+            // Save the updated trip
+            tripService.save(trip);
+            log.info("Successfully deleted day {} from trip {} and renumbered remaining days", day, id);
+            redirectAttributes.addFlashAttribute("message", "Day deleted successfully!");
+        } else {
+            log.error("Trip with ID {} not found", id);
+            redirectAttributes.addFlashAttribute("error", "Trip not found!");
+        }
+        return "redirect:/user/trip/" + id;
+    }
 }
