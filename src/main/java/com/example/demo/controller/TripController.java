@@ -6,9 +6,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.http.ResponseEntity;
 import com.example.demo.model.Trip;
 import com.example.demo.model.ItineraryItem;
+import com.example.demo.model.PackingItem;
 import com.example.demo.service.TripService;
 import lombok.extern.slf4j.Slf4j;
 
@@ -172,5 +175,129 @@ public class TripController {
             redirectAttributes.addFlashAttribute("error", "Trip not found!");
         }
         return "redirect:/user/trip/" + id;
+    }
+
+    @PostMapping("/user/trip/{id}/savePackingItem")
+    @ResponseBody
+    public ResponseEntity<?> savePackingItem(@PathVariable Long id,
+                                        @RequestParam("name") String name,
+                                        @RequestParam("checked") boolean checked) {
+        log.info("Saving packing item for trip {}: name={}, checked={}", id, name, checked);
+        
+        Trip trip = tripService.getTripById(id);
+        if (trip != null) {
+            PackingItem item = new PackingItem();
+            item.setName(name);
+            item.setChecked(checked);
+            item.setTrip(trip);
+            
+            // Initialize packing list if null
+            if (trip.getPackingList() == null) {
+                trip.setPackingList(new ArrayList<>());
+            }
+            
+            trip.getPackingList().add(item);
+            tripService.save(trip);
+            log.info("Successfully saved packing item for trip {}", id);
+            return ResponseEntity.ok().build();
+        } else {
+            log.error("Trip with ID {} not found", id);
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PostMapping("/user/trip/{id}/updatePackingItem")
+    @ResponseBody
+    public ResponseEntity<?> updatePackingItem(@PathVariable Long id,
+                                          @RequestParam("name") String name,
+                                          @RequestParam("checked") boolean checked,
+                                          @RequestParam("oldName") String oldName) {
+        log.info("Updating packing item for trip {}: oldName={}, newName={}, checked={}", id, oldName, name, checked);
+        
+        Trip trip = tripService.getTripById(id);
+        if (trip != null && trip.getPackingList() != null) {
+            PackingItem itemToUpdate = trip.getPackingList().stream()
+                .filter(item -> item.getName().equals(oldName))
+                .findFirst()
+                .orElse(null);
+            
+            if (itemToUpdate != null) {
+                itemToUpdate.setName(name);
+                itemToUpdate.setChecked(checked);
+                tripService.save(trip);
+                log.info("Successfully updated packing item for trip {}", id);
+                return ResponseEntity.ok().build();
+            } else {
+                log.error("Packing item {} not found in trip {}", oldName, id);
+                return ResponseEntity.notFound().build();
+            }
+        } else {
+            log.error("Trip with ID {} not found or has no packing list", id);
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PostMapping("/user/trip/{id}/updatePackingItemStatus")
+    @ResponseBody
+    public ResponseEntity<?> updatePackingItemStatus(@PathVariable Long id,
+                                                @RequestParam("name") String name,
+                                                @RequestParam("checked") boolean checked) {
+        log.info("Updating packing item status for trip {}: name={}, checked={}", id, name, checked);
+        
+        Trip trip = tripService.getTripById(id);
+        if (trip != null && trip.getPackingList() != null) {
+            PackingItem itemToUpdate = trip.getPackingList().stream()
+                .filter(item -> item.getName().equals(name))
+                .findFirst()
+                .orElse(null);
+            
+            if (itemToUpdate != null) {
+                itemToUpdate.setChecked(checked);
+                tripService.save(trip);
+                log.info("Successfully updated packing item status for trip {}", id);
+                return ResponseEntity.ok().build();
+            } else {
+                log.error("Packing item {} not found in trip {}", name, id);
+                return ResponseEntity.notFound().build();
+            }
+        } else {
+            log.error("Trip with ID {} not found or has no packing list", id);
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PostMapping("/user/trip/{id}/deletePackingItem")
+    @ResponseBody
+    public ResponseEntity<?> deletePackingItem(@PathVariable Long id,
+                                          @RequestParam("name") String name) {
+        log.info("Deleting packing item for trip {}: name={}", id, name);
+        
+        Trip trip = tripService.getTripById(id);
+        if (trip != null && trip.getPackingList() != null) {
+            PackingItem itemToDelete = trip.getPackingList().stream()
+                .filter(item -> item.getName().equals(name))
+                .findFirst()
+                .orElse(null);
+            
+            if (itemToDelete != null) {
+                trip.getPackingList().remove(itemToDelete);
+                tripService.save(trip);
+                log.info("Successfully deleted packing item from trip {}", id);
+                return ResponseEntity.ok().build();
+            } else {
+                log.error("Packing item {} not found in trip {}", name, id);
+                return ResponseEntity.notFound().build();
+            }
+        } else {
+            log.error("Trip with ID {} not found or has no packing list", id);
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @GetMapping("/user/lists")
+    public String showLists(Model model) {
+        List<Trip> trips = tripService.getAllTrips();
+        model.addAttribute("trips", trips);
+        return "Lists";
     }
 }

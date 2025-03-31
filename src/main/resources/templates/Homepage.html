@@ -15,7 +15,9 @@
         <nav class="header-wrapper">
             <ul class="header-nav">
                 <li><a href="/user/homepage">Dashboard</a></li>
+				<li><a href="/user/lists">Lists</a></li>
                 <li><a href="/user/travelguides">Travel Guides</a></li>
+                <li><a href="/user/profile"><i class="fa-solid fa-user"></i></a></li>
             </ul>
         </nav>
     </header>
@@ -74,23 +76,6 @@
 						<a href="/user/newtrip" class="trip-card new-trip-card">
 							<h3>+ New Trip</h3>
 							<p>Click to plan your next adventure!</p>
-						</a>
-					</li>
-				</ul>
-			</div>
-		</section>
-	
-		<!-- Lists Section -->
-		<section class="lists-section">
-			<h2>Lists</h2>
-			<p>Click to update the lists!</p>
-			<div class="trips-container">
-				<ul>
-					<!-- Placeholder for user-defined lists -->
-					<li th:if="${#lists.isEmpty(lists)}">
-						<a class="trip-card placeholder-card">
-							<h3>No Lists Yet</h3>
-							<p>Your lists will be shown here</p>
 						</a>
 					</li>
 				</ul>

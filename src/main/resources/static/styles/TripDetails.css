@@ -86,6 +86,32 @@ main {
     padding-right: 20px;
 }
 
+/* Container for sections */
+.sections-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+@media (min-width: 1024px) {
+    .sections-container {
+        flex-direction: row;
+        align-items: flex-start;
+    }
+
+    .itinerary-section {
+        flex: 2;
+        margin-top: 0;
+    }
+
+    .packing-section {
+        flex: 1;
+        margin-top: 0;
+        position: sticky;
+        top: 100px;
+    }
+}
+
 /* Trip info styles */
 main h1 {
     margin-bottom: 10px;
@@ -109,7 +135,28 @@ main p i {
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1rem;
-    background-color: transparent;
+    background-color: white;
+    max-height: calc(100vh - 300px); /* Account for header, padding, and margins */
+    overflow-y: auto;
+}
+
+.all-days::-webkit-scrollbar {
+    width: 8px;
+}
+
+.all-days::-webkit-scrollbar-track {
+    background: var(--mainclr);
+    border-radius: 4px;
+}
+
+.all-days::-webkit-scrollbar-thumb {
+    background: var(--secclr);
+    border-radius: 4px;
+    opacity: 0.8;
+}
+
+.all-days::-webkit-scrollbar-thumb:hover {
+    opacity: 1;
 }
 
 .day-container {
@@ -284,4 +331,151 @@ button {
 .add-day-btn {
     margin-top: 1rem;
     margin-bottom: 0;
+}
+
+/* Packing List Section */
+.packing-section {
+    margin-top: 2rem;
+}
+
+.packing-header {
+    margin-bottom: 1rem;
+}
+
+.packing-header h2 {
+    color: var(--secclr);
+    margin-bottom: 0.5rem;
+}
+
+.packing-progress {
+    color: var(--secclr);
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+.packing-list-container {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.packing-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.packing-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    color: var(--secclr);
+}
+
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    font-size: 1rem;
+    color: var(--secclr);
+    flex: 1;
+}
+
+.checkbox-container input[type="checkbox"] {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--secclr);
+    border: 2px solid var(--secclr);
+    border-radius: 3px;
+    appearance: none;
+    -webkit-appearance: none;
+    background-color: white;
+}
+
+.checkbox-container input[type="checkbox"]:checked {
+    background-color: var(--secclr);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill='none' stroke='white' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M6 10l3 3l6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 12px;
+}
+
+/* Remove the custom checkmark styles */
+.checkmark {
+    display: none;
+}
+
+.checkbox-container input[type="checkbox"]:checked + .checkmark:after {
+    display: none;
+}
+
+.item-name {
+    font-size: 1rem;
+    color: var(--secclr);
+}
+
+.item-actions {
+    display: flex;
+    gap: 0.5rem;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.packing-item:hover .item-actions {
+    opacity: 1;
+}
+
+.edit-btn, .delete-btn, .save-btn {
+    color: var(--secclr);
+    padding: 4px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.edit-btn:hover, .delete-btn:hover, .save-btn:hover {
+    background-color: rgba(221, 37, 37, 0.1);
+}
+
+#add-packing-item {
+    color: var(--secclr);
+    font-weight: 500;
+    width: 100%;
+    justify-content: center;
+    padding: 0.75rem;
+    border: 1px dashed var(--secclr);
+    border-radius: 8px;
+    margin-top: 1rem;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+
+#add-packing-item:hover {
+    background-color: rgba(221, 37, 37, 0.05);
+}
+
+/* Editing state for packing items */
+.packing-item.editing .item-name {
+    display: none;
+}
+
+.packing-item.editing .edit-input {
+    display: block;
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid var(--secclr);
+    border-radius: 4px;
+    font-family: var(--mainfont);
+    font-size: 1rem;
+    color: var(--secclr);
+    margin-right: 1rem;
+    background: white;
+}
+
+.packing-item.editing .item-actions {
+    opacity: 1;
 }

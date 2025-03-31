@@ -224,47 +224,233 @@ function removeItem(button) {
 
 // packing list functions
 function addPackingItem() {
-    const input = document.getElementById("packing-item");
-    if (input.value.trim() !== "") {
-        const packingList = document.getElementById("packing-list");
-        let listItem = document.createElement("li");
-        listItem.innerHTML = `
-            <input type="checkbox"> ${input.value} 
-            <button onclick="removeItem(this)">x</button>
-        `;
-        packingList.appendChild(listItem);
-        input.value = "";
+    const packingItems = document.querySelector('.packing-items');
+    
+    // Check if there's already an item being edited
+    if (packingItems.querySelector('.packing-item.editing')) {
+        return; // Don't add new item if one is being edited
     }
+    
+    const newItem = document.createElement('div');
+    newItem.className = 'packing-item editing';
+    
+    newItem.innerHTML = `
+        <label class="checkbox-container">
+            <input type="checkbox" onchange="updatePackingItemStatus(this)">
+            <span class="checkmark"></span>
+            <input type="text" class="edit-input" placeholder="Enter item name">
+        </label>
+        <div class="item-actions">
+            <button class="save-btn" onclick="savePackingItem(this)">
+                <i class="fas fa-check"></i>
+            </button>
+            <button class="delete-btn" onclick="deletePackingItem(this)">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+    
+    packingItems.appendChild(newItem);
+    const input = newItem.querySelector('.edit-input');
+    input.focus();
+    
+    // Add event listener for Enter key
+    input.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            savePackingItem(newItem.querySelector('.save-btn'));
+        }
+    });
 }
 
-function editItem(button) {
-    const listItem = button.parentElement;
-    const itemText = listItem.querySelector('.item-text');
-    const editInput = listItem.querySelector('.edit-input');
-    const editBtn = listItem.querySelector('.edit-btn');
-    const saveBtn = listItem.querySelector('.save-btn');
-
-    // Show edit input and save button, hide text and edit button
-    itemText.style.display = 'none';
-    editInput.style.display = 'inline-block';
-    editBtn.style.display = 'none';
-    saveBtn.style.display = 'inline-block';
+function editPackingItem(button) {
+    const packingItem = button.closest('.packing-item');
+    const itemName = packingItem.querySelector('.item-name');
+    const itemText = itemName.textContent;
+    
+    // Create input for editing
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'edit-input';
+    input.value = itemText;
+    
+    // Replace text with input
+    itemName.replaceWith(input);
+    
+    // Update buttons to show save and delete
+    const actionButtons = packingItem.querySelector('.item-actions');
+    actionButtons.innerHTML = `
+        <button class="save-btn" onclick="savePackingItem(this)">
+            <i class="fas fa-check"></i>
+        </button>
+        <button class="delete-btn" onclick="deletePackingItem(this)">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    
+    // Add editing class
+    packingItem.classList.add('editing');
+    input.focus();
 }
 
-function saveItem(button) {
-    const listItem = button.parentElement;
-    const itemText = listItem.querySelector('.item-text');
-    const editInput = listItem.querySelector('.edit-input');
-    const editBtn = listItem.querySelector('.edit-btn');
-    const saveBtn = listItem.querySelector('.save-btn');
-
-    // Update the text and hide edit input and save button
-    itemText.textContent = editInput.value;
-    itemText.style.display = 'inline-block';
-    editInput.style.display = 'none';
-    editBtn.style.display = 'inline-block';
-    saveBtn.style.display = 'none';
+function savePackingItem(button) {
+    const packingItem = button.closest('.packing-item');
+    const input = packingItem.querySelector('.edit-input');
+    const itemText = input.value.trim();
+    
+    if (itemText === '') {
+        alert('Please enter an item name');
+        return;
+    }
+    
+    // Check if an item with this name already exists
+    const existingItems = document.querySelectorAll('.item-name');
+    for (let item of existingItems) {
+        if (item.textContent.toLowerCase() === itemText.toLowerCase()) {
+            alert('This item already exists in your packing list');
+            return;
+        }
+    }
+    
+    const tripId = window.location.pathname.split('/').pop();
+    const checkbox = packingItem.querySelector('input[type="checkbox"]');
+    
+    // Create URL-encoded form data
+    const formData = new URLSearchParams();
+    formData.append('name', itemText);
+    formData.append('checked', checkbox.checked);
+    
+    fetch(`/user/trip/${tripId}/savePackingItem`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: formData.toString()
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Network response was not ok');
+        return response.text().then(text => text ? JSON.parse(text) : {});
+    })
+    .then(() => {
+        // Create span for item name
+        const itemName = document.createElement('span');
+        itemName.className = 'item-name';
+        itemName.textContent = itemText;
+        itemName.dataset.name = itemText;
+        
+        // Update checkbox data attribute
+        checkbox.dataset.name = itemText;
+        
+        // Replace input with span
+        input.replaceWith(itemName);
+        
+        // Show edit button and delete button
+        const actionButtons = packingItem.querySelector('.item-actions');
+        actionButtons.innerHTML = `
+            <button class="edit-btn" onclick="editPackingItem(this)">
+                <i class="fas fa-pen"></i>
+            </button>
+            <button class="delete-btn" onclick="deletePackingItem(this)">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        
+        // Remove editing class
+        packingItem.classList.remove('editing');
+        
+        // Update progress
+        updatePackingProgress();
+    })
+    .catch(error => {
+        console.error('Error saving packing item:', error);
+        // Don't show error if item was actually saved
+        if (!document.querySelector(`.item-name[data-name="${itemText}"]`)) {
+            alert('Failed to save item. Please try again.');
+        }
+    });
 }
+
+function deletePackingItem(button) {
+    const packingItem = button.closest('.packing-item');
+    const itemName = packingItem.querySelector('.item-name')?.textContent;
+    
+    // If there's no item name, it's a new unsaved item
+    if (!itemName) {
+        packingItem.remove();
+        updatePackingProgress();
+        return;
+    }
+    
+    // Confirm before deleting saved items
+    if (!confirm('Are you sure you want to delete this item?')) {
+        return;
+    }
+    
+    const tripId = window.location.pathname.split('/').pop();
+    
+    fetch(`/user/trip/${tripId}/deletePackingItem`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `name=${encodeURIComponent(itemName)}`
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Network response was not ok');
+        packingItem.remove();
+        updatePackingProgress();
+    })
+    .catch(error => {
+        console.error('Error deleting packing item:', error);
+        alert('Failed to delete item. Please try again.');
+    });
+}
+
+function updatePackingItemStatus(checkbox) {
+    const packingItem = checkbox.closest('.packing-item');
+    const itemName = checkbox.dataset.name;
+    
+    // If there's no item name yet (new item being added), just return
+    if (!itemName) return;
+    
+    const tripId = window.location.pathname.split('/').pop();
+    
+    // Create URL-encoded form data
+    const formData = new URLSearchParams();
+    formData.append('name', itemName);
+    formData.append('checked', checkbox.checked);
+    
+    fetch(`/user/trip/${tripId}/updatePackingItemStatus`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: formData.toString()
+    })
+    .then(response => {
+        if (!response.ok) {
+            checkbox.checked = !checkbox.checked; // Revert the checkbox state
+            throw new Error('Network response was not ok');
+        }
+        updatePackingProgress();
+    })
+    .catch(error => {
+        console.error('Error updating packing item status:', error);
+        alert('Failed to update item status. Please try again.');
+    });
+}
+
+function updatePackingProgress() {
+    const totalItems = document.querySelectorAll('.packing-item:not(.editing)').length;
+    const checkedItems = document.querySelectorAll('.packing-item:not(.editing) input[type="checkbox"]:checked').length;
+    const progressText = document.getElementById('packing-progress-text');
+    progressText.textContent = `${checkedItems}/${totalItems} items packed`;
+}
+
+// Initialize packing progress on page load
+document.addEventListener('DOMContentLoaded', function() {
+    updatePackingProgress();
+});
 
 function deleteDay(button) {
     // Show confirmation dialog

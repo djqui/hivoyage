@@ -1,0 +1,236 @@
+@import url('https://fonts.googleapis.com/css2?family=Liter&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&display=swap');
+
+:root {
+    --mainclr: #fffef1;
+    --secclr: #dd2525;
+    --mainfont: "Liter", sans-serif;
+    --border: #E5E5E5;
+}
+
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--mainclr);
+    margin: 0;
+    font-family: var(--mainfont) !important;
+    color: var(--secclr);
+    line-height: 1.5;
+}
+
+/* Header styles */
+header {
+    color: var(--secclr);
+    background-color: var(--mainclr);
+    width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 1000;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.logo {
+    font-size: 1.5rem;
+    margin: 20px;
+    font-weight: bold;
+}
+
+.header-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 100%;
+    margin: 20px;
+}
+
+.header-nav {
+    list-style: none;
+    display: flex;
+    gap: 30px;
+    margin: 0;
+    padding: 0;
+}
+
+.header-nav li {
+    display: inline;
+}
+
+.header-nav a {
+    text-decoration: none;
+    color: var(--secclr);
+    font-size: 1.1rem;
+    padding: 10px;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+}
+
+.header-nav a:hover,
+.header-nav a.active {
+    opacity: 1;
+}
+
+/* Main content */
+main {
+    padding-top: 100px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+/* Lists header */
+.lists-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.new-list-btn {
+    background-color: var(--secclr);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: background-color 0.2s;
+}
+
+.new-list-btn:hover {
+    background-color: #c41f1f;
+}
+
+/* Lists grid */
+.lists-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    padding: 1rem 0;
+}
+
+/* List card */
+.list-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.list-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.list-card-header {
+    margin-bottom: 1rem;
+}
+
+.list-card-header h3 {
+    margin: 0;
+    color: var(--secclr);
+    font-size: 1.2rem;
+}
+
+.list-date {
+    font-size: 0.9rem;
+    color: var(--secclr);
+    opacity: 0.8;
+}
+
+/* Progress bar */
+.list-progress {
+    margin-bottom: 1rem;
+}
+
+.progress-bar {
+    height: 4px;
+    background-color: rgba(221, 37, 37, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.progress-fill {
+    height: 100%;
+    background-color: var(--secclr);
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    font-size: 0.8rem;
+    color: var(--secclr);
+    opacity: 0.8;
+}
+
+/* List preview */
+.list-preview {
+    list-style: none;
+    margin-bottom: 1.5rem;
+}
+
+.list-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+    color: var(--secclr);
+}
+
+.list-item input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--secclr);
+    border-radius: 3px;
+}
+
+.more-items {
+    font-size: 0.9rem;
+    color: var(--secclr);
+    opacity: 0.8;
+    padding: 0.5rem 0;
+}
+
+/* List actions */
+.list-actions {
+    text-align: right;
+}
+
+.view-list-btn {
+    display: inline-block;
+    text-decoration: none;
+    color: var(--secclr);
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--secclr);
+    border-radius: 6px;
+    transition: background-color 0.2s;
+}
+
+.view-list-btn:hover {
+    background-color: rgba(221, 37, 37, 0.1);
+}
+
+/* Responsive adjustments */
+@media screen and (max-width: 768px) {
+    .lists-grid {
+        grid-template-columns: 1fr;
+    }
+
+    main {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+} 
