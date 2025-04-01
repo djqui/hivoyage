@@ -34,6 +34,7 @@ function addItineraryDay() {
         </div>
     `;
     itinerary.appendChild(dayDiv);
+    updateItineraryProgress();
 }
 
 function toggleDay(header) {
@@ -80,6 +81,7 @@ function addStop(button, dayNum) {
     
     // Focus the name input
     stopItem.querySelector('.stop-name').focus();
+    updateItineraryProgress();
 }
 
 function getStopOrder(num) {
@@ -220,6 +222,7 @@ function saveStop(button) {
 
 function removeItem(button) {
     button.parentElement.parentElement.remove();
+    updateItineraryProgress();
 }
 
 // packing list functions
@@ -498,4 +501,17 @@ function deleteDay(button) {
         console.error('Error deleting day:', error);
         alert('Failed to delete day. Please try again.');
     });
+    updateItineraryProgress();
 }
+
+function updateItineraryProgress() {
+    const days = document.querySelectorAll('.day-container').length;
+    const stops = document.querySelectorAll('.stop-item').length;
+    const progressText = document.getElementById('itinerary-progress-text');
+    progressText.textContent = `${days} days, ${stops} stops`;
+}
+
+// Initialize itinerary progress on page load
+document.addEventListener('DOMContentLoaded', function() {
+    updateItineraryProgress();
+});

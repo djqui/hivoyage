@@ -131,13 +131,30 @@ main p i {
     margin-top: 2rem;
 }
 
+.itinerary-progress {
+    color: var(--secclr);
+    font-size: 0.9rem;
+    opacity: 0.8;
+    padding-left: 1.5rem;
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.itinerary-progress i {
+    font-size: 1rem;
+    opacity: 0.9;
+}
+
 .all-days {
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1rem;
     background-color: white;
     max-height: calc(100vh - 300px); /* Account for header, padding, and margins */
-    overflow-y: auto;
+    overflow-y: scroll; /* Changed from auto to scroll to always show scrollbar */
 }
 
 .all-days::-webkit-scrollbar {
@@ -145,7 +162,7 @@ main p i {
 }
 
 .all-days::-webkit-scrollbar-track {
-    background: var(--mainclr);
+    background: white;
     border-radius: 4px;
 }
 
@@ -351,13 +368,28 @@ button {
     color: var(--secclr);
     font-size: 0.9rem;
     opacity: 0.8;
+    padding-left: 1.5rem;
+    margin-top: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.packing-progress i {
+    font-size: 1rem;
+    opacity: 0.9;
+}
+
+.packing-progress {
+    margin-bottom: 1rem;
 }
 
 .packing-list-container {
     background: white;
     border: 1px solid var(--border);
     border-radius: 8px;
-    padding: 1rem;
+    padding: 1.5rem;
+    margin-top: 1rem;
 }
 
 .packing-items {
@@ -439,6 +471,12 @@ button {
 
 .edit-btn:hover, .delete-btn:hover, .save-btn:hover {
     background-color: rgba(221, 37, 37, 0.1);
+}
+
+.packing-item {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.5rem;
 }
 
 #add-packing-item {
