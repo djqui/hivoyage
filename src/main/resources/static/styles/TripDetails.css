@@ -241,6 +241,31 @@ main p i {
     flex: 1;
 }
 
+.stop-details input {
+    width: 100%;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.9rem;
+    color: var(--secclr);
+    background-color: white;
+    transition: border-color 0.2s ease;
+}
+
+.stop-details input:focus {
+    outline: none;
+    border-color: var(--secclr);
+}
+
+.stop-details input::placeholder {
+    color: rgba(221, 37, 37, 0.5);
+}
+
+.stop-details input:last-child {
+    margin-bottom: 0;
+}
+
 .stop-name {
     font-weight: 600;
     margin-bottom: 0.25rem;

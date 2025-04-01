@@ -294,6 +294,40 @@ public class TripController {
         }
     }
 
+    @PostMapping("/user/trip/{id}/deleteItinerary")
+    @ResponseBody
+    public ResponseEntity<?> deleteItinerary(@PathVariable Long id,
+                                           @RequestParam("day") int day,
+                                           @RequestParam("title") String title,
+                                           @RequestParam("location") String location,
+                                           @RequestParam("description") String description) {
+        log.info("Deleting itinerary item for trip {}: day={}, title={}, location={}", id, day, title, location);
+        
+        Trip trip = tripService.getTripById(id);
+        if (trip != null && trip.getItinerary() != null) {
+            ItineraryItem itemToDelete = trip.getItinerary().stream()
+                .filter(item -> item.getDay() == day && 
+                              item.getTitle().equals(title) && 
+                              item.getLocation().equals(location) && 
+                              item.getDescription().equals(description))
+                .findFirst()
+                .orElse(null);
+            
+            if (itemToDelete != null) {
+                trip.getItinerary().remove(itemToDelete);
+                tripService.save(trip);
+                log.info("Successfully deleted itinerary item from trip {}", id);
+                return ResponseEntity.ok().build();
+            } else {
+                log.error("Itinerary item not found in trip {}", id);
+                return ResponseEntity.notFound().build();
+            }
+        } else {
+            log.error("Trip with ID {} not found or has no itinerary", id);
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @GetMapping("/user/lists")
     public String showLists(Model model) {
         List<Trip> trips = tripService.getAllTrips();

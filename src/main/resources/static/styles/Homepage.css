@@ -20,7 +20,8 @@ header {
 }
 
 main {
-    padding-top: 500px; /* Adjust this value based on your header's height */
+    padding-top: 250px;
+    padding-bottom: 100px;
 }
 
 .header-wrapper {

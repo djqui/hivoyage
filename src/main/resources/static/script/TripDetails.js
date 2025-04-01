@@ -86,10 +86,10 @@ function addStop(button, dayNum) {
 
 function getStopOrder(num) {
     switch(num) {
-        case 1: return 'First Stop';
-        case 2: return 'Second Stop';
-        case 3: return 'Third Stop';
-        default: return `${num}th Stop`;
+        case 1: return '1';
+        case 2: return '2';
+        case 3: return '3';
+        default: return `${num}`;
     }
 }
 
@@ -183,8 +183,6 @@ function saveStop(button) {
         body: formData
     })
     .then(response => {
-        if (!response.ok) throw new Error('Network response was not ok');
-        
         // Create text elements
         const nameElement = document.createElement('h4');
         nameElement.className = 'stop-name';
@@ -213,16 +211,53 @@ function saveStop(button) {
         
         // Sort stops
         sortStops(timeInput);
+        
+        // Reload the page to show the updated state
+        window.location.reload();
     })
     .catch(error => {
         console.error('Error saving itinerary:', error);
-        alert('Failed to save itinerary item. Please try again.');
+        // Only show error if the item wasn't saved successfully
+        if (!stopItem.querySelector('.stop-name').textContent) {
+            alert('Failed to save itinerary item. Please try again.');
+        }
     });
 }
 
 function removeItem(button) {
-    button.parentElement.parentElement.remove();
-    updateItineraryProgress();
+    const stopItem = button.closest('.stop-item');
+    const stopsList = stopItem.closest('.stops');
+    const dayMatch = stopsList.id.match(/stops-day-(\d+)/);
+    const dayNumber = dayMatch ? parseInt(dayMatch[1]) : 1;
+    const tripId = window.location.pathname.split('/').pop();
+    
+    // Get the stop details
+    const title = stopItem.querySelector('.stop-name').textContent;
+    const location = stopItem.querySelector('.stop-address').textContent;
+    const description = stopItem.querySelector('.stop-time').textContent;
+    
+    // Create form data
+    const formData = new FormData();
+    formData.append('day', dayNumber - 1);
+    formData.append('title', title);
+    formData.append('location', location);
+    formData.append('description', description);
+    
+    // Send delete request to backend
+    fetch(`/user/trip/${tripId}/deleteItinerary`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Network response was not ok');
+        // Remove from DOM after successful deletion
+        stopItem.parentElement.remove();
+        updateItineraryProgress();
+    })
+    .catch(error => {
+        console.error('Error deleting itinerary item:', error);
+        alert('Failed to delete itinerary item. Please try again.');
+    });
 }
 
 // packing list functions
