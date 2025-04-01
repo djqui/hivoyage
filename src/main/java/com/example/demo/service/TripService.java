@@ -10,6 +10,7 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -18,9 +19,56 @@ public class TripService {
     @Autowired
     private TripRepository tripRepo;
     
+    // Check if there are any overlapping current trips
+    public boolean hasOverlappingCurrentTrip(Trip newTrip) {
+        if (newTrip.getStartDate() == null || newTrip.getEndDate() == null) {
+            return false;
+        }
+
+        LocalDate now = LocalDate.now();
+        List<Trip> currentTrips = tripRepo.findAll().stream()
+            .filter(trip -> trip.getStartDate() != null && trip.getEndDate() != null &&
+                          !trip.getStartDate().isAfter(now.plusDays(1)) &&
+                          !trip.getEndDate().isBefore(now))
+            .collect(Collectors.toList());
+
+        for (Trip currentTrip : currentTrips) {
+            if (!(newTrip.getEndDate().isBefore(currentTrip.getStartDate()) ||
+                  newTrip.getStartDate().isAfter(currentTrip.getEndDate()))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Check if there are any overlapping dates with existing trips
+    public boolean hasOverlappingDates(Trip newTrip) {
+        if (newTrip.getStartDate() == null || newTrip.getEndDate() == null) {
+            return false;
+        }
+
+        List<Trip> existingTrips = tripRepo.findAll();
+        for (Trip existingTrip : existingTrips) {
+            if (existingTrip.getStartDate() != null && existingTrip.getEndDate() != null) {
+                if (!(newTrip.getEndDate().isBefore(existingTrip.getStartDate()) ||
+                      newTrip.getStartDate().isAfter(existingTrip.getEndDate()))) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     // Save a new trip
     public Trip save(Trip trip) {
         log.info("Saving trip: {}", trip);
+        
+        // Check for overlapping dates
+        if (hasOverlappingDates(trip)) {
+            log.warn("Cannot save trip: Overlapping dates with existing trip");
+            throw new IllegalStateException("Cannot have trips with overlapping dates");
+        }
+        
         Trip savedTrip = tripRepo.save(trip);
         log.info("Saved trip with ID: {}", savedTrip.getId());
         return savedTrip;
@@ -59,5 +107,12 @@ public class TripService {
         }
         log.warn("No trip found with ID: {}", id);
         return null;
+    }
+
+    // Delete a trip by ID
+    public void deleteTrip(Long id) {
+        log.info("Deleting trip with ID: {}", id);
+        tripRepo.deleteById(id);
+        log.info("Successfully deleted trip with ID: {}", id);
     }
 }

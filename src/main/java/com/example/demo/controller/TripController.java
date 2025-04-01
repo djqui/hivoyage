@@ -42,10 +42,16 @@ public class TripController {
     // Save trip and redirect to homepage
     @PostMapping("/user/saveTrip")
     public String saveTrip(Trip trip, RedirectAttributes redirectAttributes) {
-        tripService.save(trip);
-        redirectAttributes.addFlashAttribute("message", "Trip has been saved successfully!");
-        log.info("Trip saved: {}", trip);
-        return "redirect:/user/homepage";
+        try {
+            tripService.save(trip);
+            redirectAttributes.addFlashAttribute("message", "Trip has been saved successfully!");
+            log.info("Trip saved: {}", trip);
+            return "redirect:/user/homepage";
+        } catch (IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+            log.warn("Failed to save trip: {}", e.getMessage());
+            return "redirect:/user/newtrip";
+        }
     }
 
     // Display all trips on the homepage
@@ -333,5 +339,13 @@ public class TripController {
         List<Trip> trips = tripService.getAllTrips();
         model.addAttribute("trips", trips);
         return "Lists";
+    }
+
+    @PostMapping("/user/trip/{id}/delete")
+    public String deleteTrip(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        log.info("Deleting trip with ID: {}", id);
+        tripService.deleteTrip(id);
+        redirectAttributes.addFlashAttribute("message", "Trip deleted successfully!");
+        return "redirect:/user/homepage";
     }
 }

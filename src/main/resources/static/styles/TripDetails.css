@@ -113,6 +113,11 @@ main {
 }
 
 /* Trip info styles */
+
+main {
+    margin-bottom: 100px;
+}
+
 main h1 {
     margin-bottom: 10px;
 }
@@ -541,4 +546,37 @@ button {
 
 .packing-item.editing .item-actions {
     opacity: 1;
+}
+
+.trip-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.trip-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.delete-trip-btn {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: background-color 0.2s;
+}
+
+.delete-trip-btn:hover {
+    background-color: #c82333;
+}
+
+.delete-trip-btn i {
+    font-size: 1rem;
 }

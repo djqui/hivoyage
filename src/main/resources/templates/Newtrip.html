@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>HiVoyage | New Trip</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <link rel="stylesheet" href="/styles/Newtrip.css">
 </head>
 <body>
@@ -15,9 +15,9 @@
 	    
 	    <nav class="header-wrapper">
 	        <ul class="header-nav">
-	            <li><a href="/welcome">Home</a></li>
-	            <li><a href="user/travelguides">Travel Guides</a></li>
-	            <li><a href="user/newtrip">New Trip</a></li>
+                <li><a href="/user/homepage">Dashboard</a></li>
+                <li><a href="/user/travelguides">Travel Guides</a></li>
+                <li><a href="/user/profile"><i class="fa-solid fa-user"></i></a></li>
 	        </ul>
 	    </nav>
 	</header>
@@ -25,6 +25,13 @@
     <div class="container">
         <h1>Plan a New Trip</h1>
         <p>Start planning your trip by filling in the details below!</p>
+        
+        <!-- Error message display -->
+        <div th:if="${error}" class="error-message">
+            <i class="fas fa-exclamation-circle"></i>
+            <span th:text="${error}"></span>
+        </div>
+        
         <form th:action="@{/user/saveTrip}" th:object="${trip}" method="post">
             <div class="form-group">
                 <label for="destination">Where to?</label>

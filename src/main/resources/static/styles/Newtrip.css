@@ -143,3 +143,19 @@ body {
             background-color: var(--secclr);
             color: var(--mainclr);
         }
+
+.error-message {
+    background-color: #fff3f3;
+    border: 1px solid #ffcdd2;
+    color: #dc3545;
+    padding: 12px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.error-message i {
+    font-size: 1.2rem;
+}

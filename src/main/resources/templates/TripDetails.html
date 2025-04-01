@@ -7,6 +7,40 @@
     <link rel="stylesheet" th:href="@{/styles/TripDetails.css}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <title>Trip Details</title>
+    <style>
+        .trip-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .trip-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .delete-trip-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background-color 0.2s;
+        }
+
+        .delete-trip-btn:hover {
+            background-color: #c82333;
+        }
+
+        .delete-trip-btn i {
+            font-size: 1rem;
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -21,139 +55,149 @@
     </header>
 
     <main>
-        <h1>Trip to <span th:text="${trip.destination}"></span></h1>
-        <p>
-            <i class="fa-solid fa-calendar-days"></i>
-            <span th:text="${#temporals.format(trip.startDate, 'MM/dd')} + ' - ' + ${#temporals.format(trip.endDate, 'MM/dd')}"></span>
-        </p>
-        <p><strong>Status:</strong> <span th:text="${daysUntilTrip}"></span></p>
-
-        <div class="sections-container">
-            <!-- Itinerary Section -->
-            <section class="itinerary-section">
-                <h2>Itinerary</h2>
-                <div class="itinerary-progress">
-                    <i class="fas fa-calendar-check"></i>
-                    <span id="itinerary-progress-text">0 days, 0 stops</span>
-                </div>
-                <div class="all-days">
-                    <div id="itinerary">
-                        <!-- Show empty day 1 only if there are no itinerary items -->
-                        <div th:if="${trip.itinerary == null || trip.itinerary.isEmpty()}" class="day-container" data-day="1">
-                            <div class="day-header" onclick="toggleDay(this)">
-                                <div class="day-info">
-                                    <i class="fas fa-chevron-down"></i>
-                                    <div class="day-title">
-                                        <span class="day-text">Day 1</span>
-                                        <span class="day-date" th:text="${#temporals.format(trip.startDate, 'MMMM dd')}">December 20</span>
-                                    </div>
-                                </div>
-                                <div class="day-actions">
-                                    <button type="button" class="delete-day-btn" onclick="deleteDay(this)">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="day-content">
-                                <ul class="stops" id="stops-day-1"></ul>
-                                <button type="button" class="add-place-btn" onclick="addStop(this, 1)">
-                                    <i class="fas fa-plus"></i>
-                                    Add a place
-                                </button>
-                            </div>
-                        </div>
-                        <!-- Show existing days -->
-                        <div th:each="item, itemStat : ${trip.itinerary}" 
-                             th:if="${trip.itinerary != null && !trip.itinerary.isEmpty() && (itemStat.index == 0 || item.day != trip.itinerary[itemStat.index-1].day)}"
-                             class="day-container"
-                             th:data-day="${item.day + 1}">
-                            <div class="day-header" onclick="toggleDay(this)">
-                                <div class="day-info">
-                                    <i class="fas fa-chevron-down"></i>
-                                    <div class="day-title">
-                                        <span class="day-text">Day <span th:text="${item.day + 1}"></span></span>
-                                        <span class="day-date" th:text="${#temporals.format(trip.startDate.plusDays(item.day), 'MMMM dd')}"></span>
-                                    </div>
-                                </div>
-                                <div class="day-actions">
-                                    <button type="button" class="delete-day-btn" onclick="deleteDay(this)">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="day-content">
-                                <ul class="stops" th:id="'stops-day-' + ${item.day + 1}">
-                                    <li th:each="stop : ${trip.itinerary}" th:if="${stop.day == item.day}">
-                                        <div class="stop-item">
-                                            <div class="stop-order" th:text="${stopStat.count}">First Stop</div>
-                                            <div class="stop-details">
-                                                <h4 class="stop-name" th:text="${stop.title}">Stop Name</h4>
-                                                <p class="stop-address" th:text="${stop.location}">Location</p>
-                                                <p class="stop-time" th:text="${stop.description}">Time</p>
-                                            </div>
-                                            <div class="stop-actions">
-                                                <button class="edit-stop-btn" onclick="editStop(this)">
-                                                    <i class="fas fa-pen"></i>
-                                                </button>
-                                                <button class="save-stop-btn" style="display: none;" onclick="saveStop(this)">
-                                                    <i class="fas fa-check"></i>
-                                                </button>
-                                                <button class="delete-btn" onclick="removeItem(this)">
-                                                    <i class="fas fa-times"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </li>
-                                </ul>
-                                <button type="button" class="add-place-btn" th:onclick="'addStop(this, ' + ${item.day + 1} + ')'">
-                                    <i class="fas fa-plus"></i>
-                                    Add a place
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <button type="button" class="add-place-btn add-day-btn" onclick="addItineraryDay()">
-                        <i class="fas fa-plus"></i>
-                        Add Day
+        <div class="container">
+            <div class="trip-header">
+                <h1 th:text="${trip.destination}">Destination</h1>
+                <div class="trip-actions">
+                    <button type="button" class="delete-trip-btn" onclick="deleteTrip()">
+                        <i class="fas fa-trash"></i>
+                        Delete Trip
                     </button>
                 </div>
-            </section>
-            
-            <!-- Packing List Section -->
-            <section class="packing-section">
-                <div class="packing-header">
-                    <h2>Packing List</h2>
-                    <div class="packing-progress">
-                        <i class="fas fa-suitcase"></i>
-                        <span id="packing-progress-text">0/0 items packed</span>
+            </div>
+            <p>
+                <i class="fa-solid fa-calendar-days"></i>
+                <span th:text="${#temporals.format(trip.startDate, 'MM/dd')} + ' - ' + ${#temporals.format(trip.endDate, 'MM/dd')}"></span>
+            </p>
+            <p><strong>Status:</strong> <span th:text="${daysUntilTrip}"></span></p>
+
+            <div class="sections-container">
+                <!-- Itinerary Section -->
+                <section class="itinerary-section">
+                    <h2>Itinerary</h2>
+                    <div class="itinerary-progress">
+                        <i class="fas fa-calendar-check"></i>
+                        <span id="itinerary-progress-text">0 days, 0 stops</span>
                     </div>
-                </div>
-                <div class="packing-list-container">
-                    <div class="packing-items">
-                        <div th:each="item : ${trip.packingList}" class="packing-item">
-                            <label class="checkbox-container">
-                                <input type="checkbox" th:checked="${item.checked}" th:data-name="${item.name}" onchange="updatePackingItemStatus(this)">
-                                <span class="checkmark"></span>
-                                <span class="item-name" th:text="${item.name}" th:data-name="${item.name}">Item name</span>
-                            </label>
-                            <div class="item-actions">
-                                <button class="edit-btn" onclick="editPackingItem(this)">
-                                    <i class="fas fa-pen"></i>
-                                </button>
-                                <button class="delete-btn" onclick="deletePackingItem(this)">
-                                    <i class="fas fa-times"></i>
-                                </button>
+                    <div class="all-days">
+                        <div id="itinerary">
+                            <!-- Show empty day 1 only if there are no itinerary items -->
+                            <div th:if="${trip.itinerary == null || trip.itinerary.isEmpty()}" class="day-container" data-day="1">
+                                <div class="day-header" onclick="toggleDay(this)">
+                                    <div class="day-info">
+                                        <i class="fas fa-chevron-down"></i>
+                                        <div class="day-title">
+                                            <span class="day-text">Day 1</span>
+                                            <span class="day-date" th:text="${#temporals.format(trip.startDate, 'MMMM dd')}">December 20</span>
+                                        </div>
+                                    </div>
+                                    <div class="day-actions">
+                                        <button type="button" class="delete-day-btn" onclick="deleteDay(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="day-content">
+                                    <ul class="stops" id="stops-day-1"></ul>
+                                    <button type="button" class="add-place-btn" onclick="addStop(this, 1)">
+                                        <i class="fas fa-plus"></i>
+                                        Add a place
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- Show existing days -->
+                            <div th:each="item, itemStat : ${trip.itinerary}" 
+                                 th:if="${trip.itinerary != null && !trip.itinerary.isEmpty() && (itemStat.index == 0 || item.day != trip.itinerary[itemStat.index-1].day)}"
+                                 class="day-container"
+                                 th:data-day="${item.day + 1}">
+                                <div class="day-header" onclick="toggleDay(this)">
+                                    <div class="day-info">
+                                        <i class="fas fa-chevron-down"></i>
+                                        <div class="day-title">
+                                            <span class="day-text">Day <span th:text="${item.day + 1}"></span></span>
+                                            <span class="day-date" th:text="${#temporals.format(trip.startDate.plusDays(item.day), 'MMMM dd')}"></span>
+                                        </div>
+                                    </div>
+                                    <div class="day-actions">
+                                        <button type="button" class="delete-day-btn" onclick="deleteDay(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="day-content">
+                                    <ul class="stops" th:id="'stops-day-' + ${item.day + 1}">
+                                        <li th:each="stop : ${trip.itinerary}" th:if="${stop.day == item.day}">
+                                            <div class="stop-item">
+                                                <div class="stop-order" th:text="${stopStat.count}">First Stop</div>
+                                                <div class="stop-details">
+                                                    <h4 class="stop-name" th:text="${stop.title}">Stop Name</h4>
+                                                    <p class="stop-address" th:text="${stop.location}">Location</p>
+                                                    <p class="stop-time" th:text="${stop.description}">Time</p>
+                                                </div>
+                                                <div class="stop-actions">
+                                                    <button class="edit-stop-btn" onclick="editStop(this)">
+                                                        <i class="fas fa-pen"></i>
+                                                    </button>
+                                                    <button class="save-stop-btn" style="display: none;" onclick="saveStop(this)">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                    <button class="delete-btn" onclick="removeItem(this)">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                    <button type="button" class="add-place-btn" th:onclick="'addStop(this, ' + ${item.day + 1} + ')'">
+                                        <i class="fas fa-plus"></i>
+                                        Add a place
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="add-item-container">
-                        <button id="add-packing-item" onclick="addPackingItem()">
+                        <button type="button" class="add-place-btn add-day-btn" onclick="addItineraryDay()">
                             <i class="fas fa-plus"></i>
-                            List all the things you need!
+                            Add Day
                         </button>
                     </div>
-                </div>
-            </section>
+                </section>
+                
+                <!-- Packing List Section -->
+                <section class="packing-section">
+                    <div class="packing-header">
+                        <h2>Packing List</h2>
+                        <div class="packing-progress">
+                            <i class="fas fa-suitcase"></i>
+                            <span id="packing-progress-text">0/0 items packed</span>
+                        </div>
+                    </div>
+                    <div class="packing-list-container">
+                        <div class="packing-items">
+                            <div th:each="item : ${trip.packingList}" class="packing-item">
+                                <label class="checkbox-container">
+                                    <input type="checkbox" th:checked="${item.checked}" th:data-name="${item.name}" onchange="updatePackingItemStatus(this)">
+                                    <span class="checkmark"></span>
+                                    <span class="item-name" th:text="${item.name}" th:data-name="${item.name}">Item name</span>
+                                </label>
+                                <div class="item-actions">
+                                    <button class="edit-btn" onclick="editPackingItem(this)">
+                                        <i class="fas fa-pen"></i>
+                                    </button>
+                                    <button class="delete-btn" onclick="deletePackingItem(this)">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="add-item-container">
+                            <button id="add-packing-item" onclick="addPackingItem()">
+                                <i class="fas fa-plus"></i>
+                                List all the things you need!
+                            </button>
+                        </div>
+                    </div>
+                </section>
+            </div>
         </div>
     </main>
 </body>

@@ -550,3 +550,28 @@ function updateItineraryProgress() {
 document.addEventListener('DOMContentLoaded', function() {
     updateItineraryProgress();
 });
+
+function deleteTrip() {
+    // Show confirmation dialog
+    if (!confirm('Are you sure you want to delete this trip? This action cannot be undone.')) {
+        return;
+    }
+
+    const tripId = window.location.pathname.split('/').pop();
+    
+    // Send delete request to backend
+    fetch(`/user/trip/${tripId}/delete`, {
+        method: 'POST'
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        // Redirect to homepage after successful deletion
+        window.location.href = '/user/homepage';
+    })
+    .catch(error => {
+        console.error('Error deleting trip:', error);
+        alert('Failed to delete trip. Please try again.');
+    });
+}
