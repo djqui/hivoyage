@@ -41,7 +41,7 @@
 						</a>
 					</li>
 					<!-- Empty state placeholder -->
-					<li th:if="${trips == null || trips.isEmpty() || trips.?[startDate.isBefore(T(java.time.LocalDate).now().plusDays(1)) and endDate.isAfter(T(java.time.LocalDate).now())].isEmpty()}">
+					<li th:if="${trips == null || trips.isEmpty() || trips.?[!startDate.isAfter(T(java.time.LocalDate).now()) and !endDate.isBefore(T(java.time.LocalDate).now())].isEmpty()}">
 						<a class="trip-card placeholder-card">
 							<h3>No Current Trips</h3>
 							<p>Your current trips will be shown here</p>
