@@ -3,53 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script th:src="@{/script/TripDetails.js}"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/styles/Header.css}">
     <link rel="stylesheet" th:href="@{/styles/TripDetails.css}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script th:src="@{/scripts/Header.js}" defer></script>
+    <script th:src="@{/scripts/TripDetails.js}" defer></script>
+    
+    <!-- CSRF Tokens -->
+    <meta name="_csrf" th:if="${_csrf != null}" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:if="${_csrf != null}" th:content="${_csrf.headerName}"/>
+    
     <title>Trip Details</title>
-    <style>
-        .trip-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-        }
-
-        .trip-actions {
-            display: flex;
-            gap: 1rem;
-        }
-
-        .delete-trip-btn {
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: background-color 0.2s;
-        }
-
-        .delete-trip-btn:hover {
-            background-color: #c82333;
-        }
-
-        .delete-trip-btn i {
-            font-size: 1rem;
-        }
-    </style>
 </head>
 <body>
-    <header>
-        <div class="logo">HiVoyage</div>
+	<header>
+        <div class="logo">
+            <a href="/user/homepage">HiVoyage</a>
+        </div>
+        
         <nav class="header-wrapper">
             <ul class="header-nav">
                 <li><a href="/user/homepage">Dashboard</a></li>
                 <li><a href="/user/travelguides">Travel Guides</a></li>
-                <li><a href="/user/profile"><i class="fa-solid fa-user"></i></a></li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-icon">
+                        <img th:if="${user != null && user.profilePicture != null}" th:src="@{'/uploads/profile-pictures/' + ${user.profilePicture}}" 
+                             alt="Profile Picture" class="profile-picture-small">
+                        <i th:unless="${user != null && user.profilePicture != null}" class="fas fa-user"></i>
+                    </a>
+                    <div class="dropdown-content">
+                        <p th:if="${user != null}"> Hello, <span th:text="${user != null ? user.username : 'Guest'}"></span>!</p>
+                        <a href="/user/profile">Profile</a>
+                        <a href="/logout">Logout</a>
+                    </div>
+                </li>
             </ul>
         </nav>
     </header>
@@ -66,7 +53,7 @@
                 </div>
             </div>
             <p>
-                <i class="fa-solid fa-calendar-days"></i>
+                <i class="fas fa-calendar-days"></i>
                 <span th:text="${#temporals.format(trip.startDate, 'MM/dd')} + ' - ' + ${#temporals.format(trip.endDate, 'MM/dd')}"></span>
             </p>
             <p><strong>Status:</strong> <span th:text="${daysUntilTrip}"></span></p>
@@ -162,41 +149,81 @@
                     </div>
                 </section>
                 
-                <!-- Packing List Section -->
-                <section class="packing-section">
-                    <div class="packing-header">
-                        <h2>Packing List</h2>
-                        <div class="packing-progress">
-                            <i class="fas fa-suitcase"></i>
-                            <span id="packing-progress-text">0/0 items packed</span>
-                        </div>
-                    </div>
-                    <div class="packing-list-container">
-                        <div class="packing-items">
-                            <div th:each="item : ${trip.packingList}" class="packing-item">
-                                <label class="checkbox-container">
-                                    <input type="checkbox" th:checked="${item.checked}" th:data-name="${item.name}" onchange="updatePackingItemStatus(this)">
-                                    <span class="checkmark"></span>
-                                    <span class="item-name" th:text="${item.name}" th:data-name="${item.name}">Item name</span>
-                                </label>
-                                <div class="item-actions">
-                                    <button class="edit-btn" onclick="editPackingItem(this)">
-                                        <i class="fas fa-pen"></i>
-                                    </button>
-                                    <button class="delete-btn" onclick="deletePackingItem(this)">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                </div>
+                <div class="right-column">
+                    <!-- Calendar Section -->
+                    <section class="calendar-section">
+                        <h2>Calendar</h2>
+                        <div class="calendar-container">
+                            <div class="calendar-header">
+                                <button id="prev-month"><i class="fas fa-chevron-left"></i></button>
+                                <h3 id="calendar-month-year">January 2023</h3>
+                                <button id="next-month"><i class="fas fa-chevron-right"></i></button>
+                            </div>
+                            <div class="weekdays">
+                                <div>Sun</div>
+                                <div>Mon</div>
+                                <div>Tue</div>
+                                <div>Wed</div>
+                                <div>Thu</div>
+                                <div>Fri</div>
+                                <div>Sat</div>
+                            </div>
+                            <div class="calendar-days" id="calendar-days">
+                                <!-- Calendar days will be inserted here by JavaScript -->
                             </div>
                         </div>
-                        <div class="add-item-container">
-                            <button id="add-packing-item" onclick="addPackingItem()">
-                                <i class="fas fa-plus"></i>
-                                List all the things you need!
-                            </button>
+                        <div class="calendar-legend">
+                            <div class="legend-item">
+                                <div class="legend-color trip-day"></div>
+                                <div>Trip Days</div>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color today-marker"></div>
+                                <div>Today</div>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color has-events"></div>
+                                <div>Has Events</div>
+                            </div>
                         </div>
-                    </div>
-                </section>
+                    </section>
+                    
+                    <!-- Packing List Section -->
+                    <section class="packing-section">
+                        <div class="packing-header">
+                            <h2>Packing List</h2>
+                            <div class="packing-progress">
+                                <i class="fas fa-suitcase"></i>
+                                <span id="packing-progress-text">0/0 items packed</span>
+                            </div>
+                        </div>
+                        <div class="packing-list-container">
+                            <div class="packing-items">
+                                <div th:each="item : ${trip.packingList}" class="packing-item">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" th:checked="${item.checked}" th:data-name="${item.name}" onchange="updatePackingItemStatus(this)">
+                                        <span class="checkmark"></span>
+                                        <span class="item-name" th:text="${item.name}" th:data-name="${item.name}">Item name</span>
+                                    </label>
+                                    <div class="item-actions">
+                                        <button class="edit-btn" onclick="editPackingItem(this)">
+                                            <i class="fas fa-pen"></i>
+                                        </button>
+                                        <button class="delete-btn" onclick="deletePackingItem(this)">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="add-item-container">
+                                <button id="add-packing-item" onclick="addPackingItem()">
+                                    <i class="fas fa-plus"></i>
+                                    List all the things you need!
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+                </div>
             </div>
         </div>
     </main>

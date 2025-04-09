@@ -5,23 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Profile - HiVoyage</title>
     <link rel="stylesheet" th:href="@{/styles/Profile.css}">
-    <link href="https://fonts.googleapis.com/css2?family=Liter&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/styles/Header.css}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css" rel="stylesheet">
 </head>
 <body>
     <header>
         <div class="logo">
-            HiVoyage
+            <a href="/user/homepage">HiVoyage</a>
         </div>
         
         <nav class="header-wrapper">
             <ul class="header-nav">
-                <li><a href="/user/homepage">Home</a></li>
+                <li><a href="/user/homepage">Dashboard</a></li>
+                <li><a href="/user/travelguides">Travel Guides</a></li>
                 <li class="dropdown">
                     <a href="#" class="dropdown-icon">
-                        <i class="fa-solid fa-user"></i>
+                        <img th:if="${user.profilePicture}" th:src="@{'/uploads/profile-pictures/' + ${user.profilePicture}}" 
+                             alt="Profile Picture" class="profile-picture-small">
+                        <i th:unless="${user.profilePicture}" class="fa-solid fa-user"></i>
                     </a>
                     <div class="dropdown-content">
+                        <p> Hello, <span th:text="${user.username}"></span>!</p>
                         <a href="/user/profile">Profile</a>
                         <a href="/logout">Logout</a>
                     </div>
@@ -33,7 +38,7 @@
     <main>
         <div class="profile-container">
             <div class="profile-header">
-                <h1>Profile Settings</h1>
+                <h2>Profile Settings</h2>
             </div>
 
             <!-- Alert Messages -->
@@ -93,17 +98,13 @@
 
                 <div class="btn-group">
                     <button type="submit" class="btn">Save Changes</button>
-                    <a th:href="@{/user/homepage}" class="btn">Back to Homepage</a>
                 </div>
             </form>
         </div>
     </main>
 
-    <script>
-        // Show upload button when a file is selected
-        document.getElementById('profilePictureInput').addEventListener('change', function() {
-            document.getElementById('uploadButton').style.display = 'block';
-        });
-    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
+    <script src="/scripts/Header.js"></script>
+    <script src="/scripts/Profile.js"></script>
 </body>
 </html> 

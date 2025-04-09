@@ -1,0 +1,136 @@
+/* Header styles */
+header {
+    color: var(--secclr);
+    background-color: var(--mainclr);
+    height: 80px;
+    width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 1000;
+}
+
+.header-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 100%;
+    margin: 20px;
+}
+
+.logo {
+    font-size: 1.5rem;
+    margin: 20px;
+    font-weight: bold;
+}
+
+.logo a {
+    color: var(--secclr);
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.header-nav {
+    list-style: none;
+    display: flex;
+    gap: 30px;
+    margin: 0;
+    padding: 0;
+    align-items: center;
+    height: 60px;
+}
+
+.header-nav li {
+    display: inline;
+}
+
+.header-nav a {
+    text-decoration: none;
+    color: var(--secclr);
+    font-size: 1.1rem;
+    padding: 10px;
+}
+
+.header-nav a:hover {
+    color: black;
+}
+
+/* Dropdown styles */
+.dropdown {
+
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background-color: var(--mainclr);
+    min-width: 160px;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    border: 2px solid var(--secclr);
+    border-radius: 10px;
+    z-index: 1000;
+    margin-top: 5px;
+}
+
+.dropdown-content p {
+    color: var(--secclr);
+    padding: 10px 10px;
+    text-decoration: none;
+    display: block;
+    font-family: var(--mainfont);
+    margin: 0;
+    text-align: center;
+}
+
+.dropdown-content a {
+    color: var(--secclr);
+    padding: 10px 10px;
+    text-decoration: none;
+    display: block;
+    font-family: var(--mainfont);
+    transition: all 0.3s ease;
+}
+
+.dropdown-content a:hover {
+    background-color: var(--secclr);
+    color: var(--mainclr);
+}
+
+/* Dropdown now only shows on click, not on hover */
+/*
+.dropdown:hover .dropdown-content {
+    display: block;
+}
+*/
+
+.dropdown-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+}
+
+.dropdown-icon i {
+    font-size: 40px;
+    color: var(--secclr);
+}
+
+.profile-picture-small {
+    max-height: 44px;
+    max-width: 44px;
+    height: 44px !important;
+    width: 44px !important;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--secclr);
+    display: inline-block;
+    vertical-align: middle;
+    box-sizing: content-box;
+}

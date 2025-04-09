@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HiVoyage</title>
     <link rel="stylesheet" href="/styles/Homepage.css">
+	<link rel="stylesheet" href="/styles/Header.css">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
 </head>
@@ -20,9 +21,10 @@
                     <a href="#" class="dropdown-icon">
                         <img th:if="${user.profilePicture}" th:src="@{'/uploads/profile-pictures/' + ${user.profilePicture}}" 
                              alt="Profile Picture" class="profile-picture-small">
-                        <i th:unless="${user.profilePicture}" class="fa-solid fa-user-circle"></i>
+                        <i th:unless="${user.profilePicture}" class="fa-solid fa-user"></i>
                     </a>
                     <div class="dropdown-content">
+						<p> Hello, <span th:text="${user.username}"></span>!</p>
                         <a href="/user/profile">Profile</a>
                         <a href="/logout">Logout</a>
                     </div>
@@ -116,6 +118,6 @@
 		</section>
 	</main>
 	
-
+    <script src="/scripts/Header.js"></script>
 </body>
 </html>

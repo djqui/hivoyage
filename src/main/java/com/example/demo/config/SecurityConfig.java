@@ -28,12 +28,18 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-            .csrf(csrf -> csrf.disable())  
+            .csrf(csrf -> csrf
+                .ignoringRequestMatchers("/user/trip/*/saveItineraryAjax", "/user/trip/*/saveItinerary", 
+                                          "/user/trip/*/deleteItinerary", "/user/trip/*/deleteDay", 
+                                          "/user/trip/*/savePackingItem", "/user/trip/*/updatePackingItem", 
+                                          "/user/trip/*/deletePackingItem", "/user/trip/*/updatePackingItemStatus")
+            )  
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                     "/welcome", "/login", "/signup", "/user/validate", 
-                    "/forgotpassword", "/resetpassword", "/user/verify", "/styles/**", "/js/**"
-                ).permitAll()  // Allow public access to signup, login, verification
+                    "/forgotpassword", "/resetpassword", "/user/verify", "/styles/**", "/js/**", 
+                    "/scripts/**", "/images/**", "/test/**", "/uploads/profile-pictures/**"
+                ).permitAll()  // Allow public access to static resources and authentication pages
                 .requestMatchers("/user/profile/**").authenticated()  // Require authentication for profile
                 .requestMatchers("/uploads/**").authenticated()  // Require authentication for uploaded files
                 .anyRequest().authenticated()  // Require authentication for all other routes

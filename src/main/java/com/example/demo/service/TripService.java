@@ -75,6 +75,15 @@ public class TripService {
         log.info("Saved trip with ID: {} for user: {}", savedTrip.getId(), user.getEmail());
         return savedTrip;
     }
+    
+    // Save trip items without checking date overlaps
+    public Trip saveWithoutDateCheck(Trip trip, User user) {
+        log.info("Saving trip items for trip ID: {} for user: {}", trip.getId(), user.getEmail());
+        trip.setUser(user);
+        Trip savedTrip = tripRepo.save(trip);
+        log.info("Saved trip items for trip ID: {}", savedTrip.getId());
+        return savedTrip;
+    }
 
     // Retrieve all trips for a specific user
     public List<Trip> getAllTripsForUser(User user) {

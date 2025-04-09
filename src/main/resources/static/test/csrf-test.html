@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSRF Test</title>
+    
+    <!-- These will be populated by Thymeleaf in the live environment -->
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+</head>
+<body>
+    <h1>CSRF Token Test</h1>
+    
+    <div id="csrf-info">
+        <p>CSRF Token: <span id="csrf-token">Not found</span></p>
+        <p>CSRF Header: <span id="csrf-header">Not found</span></p>
+    </div>
+    
+    <h2>Test Form</h2>
+    <form id="test-form">
+        <div>
+            <label for="test-input">Test Input:</label>
+            <input type="text" id="test-input" name="testInput" value="Test Value">
+        </div>
+        <button type="submit">Submit Test</button>
+    </form>
+    
+    <div id="result"></div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Extract CSRF token
+            const token = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+            const header = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+            
+            // Display token info
+            document.getElementById('csrf-token').textContent = token || 'Not found';
+            document.getElementById('csrf-header').textContent = header || 'Not found';
+            
+            // Handle form submission
+            document.getElementById('test-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const value = document.getElementById('test-input').value;
+                const result = document.getElementById('result');
+                
+                // Create form data
+                const formData = new FormData();
+                formData.append('value', value);
+                
+                // Set up fetch options
+                const fetchOptions = {
+                    method: 'POST',
+                    body: formData
+                };
+                
+                // Add CSRF headers if present
+                if (token && header) {
+                    fetchOptions.headers = {
+                        [header]: token
+                    };
+                }
+                
+                // Show what we're sending
+                result.innerHTML = `
+                    <h3>Request Data:</h3>
+                    <pre>${JSON.stringify({
+                        url: '/test/echo',
+                        options: {
+                            method: fetchOptions.method,
+                            body: 'FormData object',
+                            headers: fetchOptions.headers || 'No headers'
+                        }
+                    }, null, 2)}</pre>
+                `;
+                
+                // In a real app, we would send the request
+                // fetch('/test/echo', fetchOptions)
+                //     .then(response => response.text())
+                //     .then(data => {
+                //         result.innerHTML += `<h3>Response:</h3><pre>${data}</pre>`;
+                //     })
+                //     .catch(error => {
+                //         result.innerHTML += `<h3>Error:</h3><pre>${error.message}</pre>`;
+                //     });
+            });
+        });
+    </script>
+</body>
+</html> 

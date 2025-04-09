@@ -5,22 +5,32 @@
 <title>HiVoyage | New Trip</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <link rel="stylesheet" href="/styles/Newtrip.css">
+<link rel="stylesheet" href="/styles/Header.css">
+<script th:src="@{/scripts/Header.js}"></script>
 </head>
 <body>
 
-	<header>
-	    <div class="logo">
-	        HiVoyage
-	    </div>
-	    
-	    <nav class="header-wrapper">
-	        <ul class="header-nav">
+    <header>
+        <div class="logo">HiVoyage</div>
+        <nav class="header-wrapper">
+            <ul class="header-nav">
                 <li><a href="/user/homepage">Dashboard</a></li>
                 <li><a href="/user/travelguides">Travel Guides</a></li>
-                <li><a href="/user/profile"><i class="fa-solid fa-user"></i></a></li>
-	        </ul>
-	    </nav>
-	</header>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-icon">
+                        <img th:if="${user.profilePicture}" th:src="@{'/uploads/profile-pictures/' + ${user.profilePicture}}" 
+                             alt="Profile Picture" class="profile-picture-small">
+                        <i th:unless="${user.profilePicture}" class="fa-solid fa-user"></i>
+                    </a>
+                    <div class="dropdown-content">
+						<p> Hello, <span th:text="${user.username}"></span>!</p>
+                        <a href="/user/profile">Profile</a>
+                        <a href="/logout">Logout</a>
+                    </div>
+                </li>
+            </ul>
+        </nav>
+    </header>
 
     <div class="container">
         <h1>Plan a New Trip</h1>
@@ -53,7 +63,5 @@
             </div>
         </form>
     </div>
-    
-
 </body>
 </html>

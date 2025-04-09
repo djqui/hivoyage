@@ -4,11 +4,14 @@ import com.example.demo.model.User;
 import com.example.demo.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import com.example.demo.security.CustomUserDetails;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 
 @Controller
 public class UserController {
@@ -180,6 +183,13 @@ public class UserController {
             // Log the birthday value after update
             System.out.println("✅ Birthday after update: " + savedUser.getBirthday());
             
+            // Update the authentication with the fresh user data
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            CustomUserDetails newDetails = new CustomUserDetails(savedUser);
+            Authentication newAuth = new UsernamePasswordAuthenticationToken(
+                newDetails, auth.getCredentials(), auth.getAuthorities());
+            SecurityContextHolder.getContext().setAuthentication(newAuth);
+            
             model.addAttribute("message", "Profile updated successfully!");
             model.addAttribute("user", savedUser);
             return "profile";
@@ -215,6 +225,14 @@ public class UserController {
             }
 
             User updatedUser = userService.updateProfilePicture(userDetails.getUser().getId(), file);
+            
+            // Update the authentication with the fresh user data
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            CustomUserDetails newDetails = new CustomUserDetails(updatedUser);
+            Authentication newAuth = new UsernamePasswordAuthenticationToken(
+                newDetails, auth.getCredentials(), auth.getAuthorities());
+            SecurityContextHolder.getContext().setAuthentication(newAuth);
+            
             model.addAttribute("message", "Profile picture updated successfully!");
             model.addAttribute("user", updatedUser);
             return "profile";

@@ -17,6 +17,7 @@ import com.example.demo.model.User;
 import com.example.demo.service.TripService;
 import com.example.demo.security.CustomUserDetails;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -37,9 +38,12 @@ public class TripController {
 
     // Display the new trip form
     @GetMapping("/user/newtrip")
-    public String showNewTrip(Model model) {
+    public String showNewTrip(@AuthenticationPrincipal CustomUserDetails userDetails, Model model) {
         model.addAttribute("trip", new Trip());
-        return "newtrip";
+        if (userDetails != null) {
+            model.addAttribute("user", userDetails.getUser());
+        }
+        return "Newtrip";
     }
 
     // Save trip and redirect to homepage
@@ -124,8 +128,9 @@ public class TripController {
     
         model.addAttribute("trip", trip);
         model.addAttribute("daysUntilTrip", status);
+        model.addAttribute("user", user);
     
-        return "tripdetails";
+        return "TripDetails";
     }
     
     @PostMapping("/user/trip/{id}/saveItinerary")
@@ -133,10 +138,52 @@ public class TripController {
                                @RequestParam("title") String title,
                                @RequestParam("location") String location,
                                @RequestParam("description") String description,
+                               @AuthenticationPrincipal CustomUserDetails userDetails,
                                RedirectAttributes redirectAttributes) {
         log.info("Saving itinerary item for trip {}: day={}, title={}, location={}", id, day, title, location);
         
-        Trip trip = tripService.getTripById(id);
+        saveItineraryItem(id, day, title, location, description, userDetails.getUser());
+        redirectAttributes.addFlashAttribute("message", "Itinerary item saved successfully!");
+        return "redirect:/user/trip/" + id;
+    }
+    
+    @PostMapping("/user/trip/{id}/saveItineraryAjax")
+    @ResponseBody
+    public ResponseEntity<?> saveItineraryAjax(@PathVariable Long id, 
+                                           @RequestParam("day") int day,
+                                           @RequestParam("title") String title,
+                                           @RequestParam("location") String location,
+                                           @RequestParam("description") String description,
+                                           @AuthenticationPrincipal CustomUserDetails userDetails) {
+        log.info("Saving itinerary item via AJAX for trip {}: day={}, title={}, location={}, description={}", 
+                id, day, title, location, description);
+        
+        if (userDetails == null) {
+            log.error("User details is null! Authentication issue detected.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User not authenticated");
+        }
+        
+        User user = userDetails.getUser();
+        log.info("Authenticated user: {}", user.getEmail());
+        
+        try {
+            boolean success = saveItineraryItem(id, day, title, location, description, user);
+            if (success) {
+                log.info("Successfully saved itinerary item via AJAX");
+                return ResponseEntity.ok().body("Item saved successfully");
+            } else {
+                log.error("Failed to save item: Trip not found");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Trip not found");
+            }
+        } catch (Exception e) {
+            log.error("Exception while saving itinerary item: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error saving item: " + e.getMessage());
+        }
+    }
+    
+    private boolean saveItineraryItem(Long id, int day, String title, String location, String description, User user) {
+        Trip trip = tripService.getTripByIdForUser(id, user);
         if (trip != null) {
             ItineraryItem item = new ItineraryItem();
             item.setDay(day);
@@ -151,22 +198,24 @@ public class TripController {
             }
             
             trip.getItinerary().add(item);
-            tripService.save(trip);
+            tripService.saveWithoutDateCheck(trip, user);
             log.info("Successfully saved itinerary item for trip {}", id);
-            redirectAttributes.addFlashAttribute("message", "Itinerary item saved successfully!");
+            return true;
         } else {
             log.error("Trip with ID {} not found", id);
-            redirectAttributes.addFlashAttribute("error", "Trip not found!");
+            return false;
         }
-        return "redirect:/user/trip/" + id;
     }
 
     @PostMapping("/user/trip/{id}/deleteDay")
-    public String deleteDay(@PathVariable Long id, @RequestParam("day") int day,
+    public String deleteDay(@PathVariable Long id, 
+                          @RequestParam("day") int day,
+                          @AuthenticationPrincipal CustomUserDetails userDetails,
                            RedirectAttributes redirectAttributes) {
         log.info("Deleting day {} from trip {}", day, id);
         
-        Trip trip = tripService.getTripById(id);
+        User user = userDetails.getUser();
+        Trip trip = tripService.getTripByIdForUser(id, user);
         if (trip != null && trip.getItinerary() != null) {
             List<ItineraryItem> itemsToRemove = new ArrayList<>();
             List<ItineraryItem> itemsToUpdate = new ArrayList<>();
@@ -185,7 +234,7 @@ public class TripController {
             trip.getItinerary().removeAll(itemsToRemove);
             
             // Save the updated trip
-            tripService.save(trip);
+            tripService.saveWithoutDateCheck(trip, user);
             log.info("Successfully deleted day {} from trip {} and renumbered remaining days", day, id);
             redirectAttributes.addFlashAttribute("message", "Day deleted successfully!");
         } else {
@@ -199,10 +248,12 @@ public class TripController {
     @ResponseBody
     public ResponseEntity<?> savePackingItem(@PathVariable Long id,
                                         @RequestParam("name") String name,
-                                        @RequestParam("checked") boolean checked) {
+                                        @RequestParam("checked") boolean checked,
+                                        @AuthenticationPrincipal CustomUserDetails userDetails) {
         log.info("Saving packing item for trip {}: name={}, checked={}", id, name, checked);
         
-        Trip trip = tripService.getTripById(id);
+        User user = userDetails.getUser();
+        Trip trip = tripService.getTripByIdForUser(id, user);
         if (trip != null) {
             PackingItem item = new PackingItem();
             item.setName(name);
@@ -215,7 +266,7 @@ public class TripController {
             }
             
             trip.getPackingList().add(item);
-            tripService.save(trip);
+            tripService.saveWithoutDateCheck(trip, user);
             log.info("Successfully saved packing item for trip {}", id);
             return ResponseEntity.ok().build();
         } else {
@@ -229,10 +280,12 @@ public class TripController {
     public ResponseEntity<?> updatePackingItem(@PathVariable Long id,
                                           @RequestParam("name") String name,
                                           @RequestParam("checked") boolean checked,
-                                          @RequestParam("oldName") String oldName) {
+                                          @RequestParam("oldName") String oldName,
+                                          @AuthenticationPrincipal CustomUserDetails userDetails) {
         log.info("Updating packing item for trip {}: oldName={}, newName={}, checked={}", id, oldName, name, checked);
         
-        Trip trip = tripService.getTripById(id);
+        User user = userDetails.getUser();
+        Trip trip = tripService.getTripByIdForUser(id, user);
         if (trip != null && trip.getPackingList() != null) {
             PackingItem itemToUpdate = trip.getPackingList().stream()
                 .filter(item -> item.getName().equals(oldName))
@@ -242,7 +295,7 @@ public class TripController {
             if (itemToUpdate != null) {
                 itemToUpdate.setName(name);
                 itemToUpdate.setChecked(checked);
-                tripService.save(trip);
+                tripService.saveWithoutDateCheck(trip, user);
                 log.info("Successfully updated packing item for trip {}", id);
                 return ResponseEntity.ok().build();
             } else {
@@ -259,10 +312,12 @@ public class TripController {
     @ResponseBody
     public ResponseEntity<?> updatePackingItemStatus(@PathVariable Long id,
                                                 @RequestParam("name") String name,
-                                                @RequestParam("checked") boolean checked) {
+                                                @RequestParam("checked") boolean checked,
+                                                @AuthenticationPrincipal CustomUserDetails userDetails) {
         log.info("Updating packing item status for trip {}: name={}, checked={}", id, name, checked);
         
-        Trip trip = tripService.getTripById(id);
+        User user = userDetails.getUser();
+        Trip trip = tripService.getTripByIdForUser(id, user);
         if (trip != null && trip.getPackingList() != null) {
             PackingItem itemToUpdate = trip.getPackingList().stream()
                 .filter(item -> item.getName().equals(name))
@@ -271,7 +326,7 @@ public class TripController {
             
             if (itemToUpdate != null) {
                 itemToUpdate.setChecked(checked);
-                tripService.save(trip);
+                tripService.saveWithoutDateCheck(trip, user);
                 log.info("Successfully updated packing item status for trip {}", id);
                 return ResponseEntity.ok().build();
             } else {
@@ -287,10 +342,12 @@ public class TripController {
     @PostMapping("/user/trip/{id}/deletePackingItem")
     @ResponseBody
     public ResponseEntity<?> deletePackingItem(@PathVariable Long id,
-                                          @RequestParam("name") String name) {
+                                          @RequestParam("name") String name,
+                                          @AuthenticationPrincipal CustomUserDetails userDetails) {
         log.info("Deleting packing item for trip {}: name={}", id, name);
         
-        Trip trip = tripService.getTripById(id);
+        User user = userDetails.getUser();
+        Trip trip = tripService.getTripByIdForUser(id, user);
         if (trip != null && trip.getPackingList() != null) {
             PackingItem itemToDelete = trip.getPackingList().stream()
                 .filter(item -> item.getName().equals(name))
@@ -299,7 +356,7 @@ public class TripController {
             
             if (itemToDelete != null) {
                 trip.getPackingList().remove(itemToDelete);
-                tripService.save(trip);
+                tripService.saveWithoutDateCheck(trip, user);
                 log.info("Successfully deleted packing item from trip {}", id);
                 return ResponseEntity.ok().build();
             } else {
@@ -318,10 +375,12 @@ public class TripController {
                                            @RequestParam("day") int day,
                                            @RequestParam("title") String title,
                                            @RequestParam("location") String location,
-                                           @RequestParam("description") String description) {
+                                           @RequestParam("description") String description,
+                                           @AuthenticationPrincipal CustomUserDetails userDetails) {
         log.info("Deleting itinerary item for trip {}: day={}, title={}, location={}", id, day, title, location);
         
-        Trip trip = tripService.getTripById(id);
+        User user = userDetails.getUser();
+        Trip trip = tripService.getTripByIdForUser(id, user);
         if (trip != null && trip.getItinerary() != null) {
             ItineraryItem itemToDelete = trip.getItinerary().stream()
                 .filter(item -> item.getDay() == day && 
@@ -333,7 +392,7 @@ public class TripController {
             
             if (itemToDelete != null) {
                 trip.getItinerary().remove(itemToDelete);
-                tripService.save(trip);
+                tripService.saveWithoutDateCheck(trip, user);
                 log.info("Successfully deleted itinerary item from trip {}", id);
                 return ResponseEntity.ok().build();
             } else {
@@ -347,9 +406,11 @@ public class TripController {
     }
 
     @GetMapping("/user/lists")
-    public String showLists(Model model) {
-        List<Trip> trips = tripService.getAllTrips();
+    public String showLists(@AuthenticationPrincipal CustomUserDetails userDetails, Model model) {
+        User user = userDetails.getUser();
+        List<Trip> trips = tripService.getAllTripsForUser(user);
         model.addAttribute("trips", trips);
+        model.addAttribute("user", user);
         return "Lists";
     }
 
