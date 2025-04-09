@@ -3,9 +3,12 @@ package com.example.demo.controller;
 import com.example.demo.model.User;
 import com.example.demo.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import com.example.demo.security.CustomUserDetails;
 
 @Controller
 public class UserController {
@@ -150,6 +153,75 @@ public class UserController {
             return "redirect:/login?error=invalidToken"; // Redirect to login with error message
         }
     }
-    
-    
+
+    @GetMapping("/user/profile")
+    public String showProfile(@AuthenticationPrincipal CustomUserDetails userDetails, Model model) {
+        User user = userDetails.getUser();
+        model.addAttribute("user", user);
+        return "profile";
+    }
+
+    @PostMapping("/user/profile/update")
+    public String updateProfile(@AuthenticationPrincipal CustomUserDetails userDetails, 
+                              @ModelAttribute User updatedUser,
+                              Model model) {
+        try {
+            User currentUser = userDetails.getUser();
+            
+            // Log the birthday value before update
+            System.out.println("🔹 Birthday before update: " + updatedUser.getBirthday());
+            
+            // Ensure email cannot be changed
+            updatedUser.setEmail(currentUser.getEmail());
+            
+            // Update the user
+            User savedUser = userService.updateProfile(currentUser.getId(), updatedUser);
+            
+            // Log the birthday value after update
+            System.out.println("✅ Birthday after update: " + savedUser.getBirthday());
+            
+            model.addAttribute("message", "Profile updated successfully!");
+            model.addAttribute("user", savedUser);
+            return "profile";
+        } catch (Exception e) {
+            System.out.println("❌ Error updating profile: " + e.getMessage());
+            model.addAttribute("error", "Failed to update profile: " + e.getMessage());
+            model.addAttribute("user", userDetails.getUser());
+            return "profile";
+        }
+    }
+
+    @PostMapping("/user/profile/picture")
+    public String updateProfilePicture(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                     @RequestParam("profilePicture") MultipartFile file,
+                                     Model model) {
+        try {
+            if (file.isEmpty()) {
+                model.addAttribute("error", "Please select a file to upload");
+                return "redirect:/user/profile";
+            }
+
+            // Validate file type
+            String contentType = file.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                model.addAttribute("error", "Only image files are allowed");
+                return "redirect:/user/profile";
+            }
+
+            // Validate file size (5MB max)
+            if (file.getSize() > 5 * 1024 * 1024) {
+                model.addAttribute("error", "File size must be less than 5MB");
+                return "redirect:/user/profile";
+            }
+
+            User updatedUser = userService.updateProfilePicture(userDetails.getUser().getId(), file);
+            model.addAttribute("message", "Profile picture updated successfully!");
+            model.addAttribute("user", updatedUser);
+            return "profile";
+        } catch (Exception e) {
+            model.addAttribute("error", "Failed to update profile picture: " + e.getMessage());
+            model.addAttribute("user", userDetails.getUser());
+            return "profile";
+        }
+    }
 }

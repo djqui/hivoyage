@@ -34,6 +34,8 @@ public class SecurityConfig {
                     "/welcome", "/login", "/signup", "/user/validate", 
                     "/forgotpassword", "/resetpassword", "/user/verify", "/styles/**", "/js/**"
                 ).permitAll()  // Allow public access to signup, login, verification
+                .requestMatchers("/user/profile/**").authenticated()  // Require authentication for profile
+                .requestMatchers("/uploads/**").authenticated()  // Require authentication for uploaded files
                 .anyRequest().authenticated()  // Require authentication for all other routes
             )
             .formLogin(login -> login

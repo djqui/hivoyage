@@ -16,7 +16,17 @@
             <ul class="header-nav">
                 <li><a href="/user/homepage">Dashboard</a></li>
                 <li><a href="/user/travelguides">Travel Guides</a></li>
-                <li><a href="/user/profile"><i class="fa-solid fa-user"></i></a></li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-icon">
+                        <img th:if="${user.profilePicture}" th:src="@{'/uploads/profile-pictures/' + ${user.profilePicture}}" 
+                             alt="Profile Picture" class="profile-picture-small">
+                        <i th:unless="${user.profilePicture}" class="fa-solid fa-user-circle"></i>
+                    </a>
+                    <div class="dropdown-content">
+                        <a href="/user/profile">Profile</a>
+                        <a href="/logout">Logout</a>
+                    </div>
+                </li>
             </ul>
         </nav>
     </header>
@@ -28,9 +38,7 @@
 			<p>Enjoy your journey! Click for details.</p>
 			<div class="trips-container">
 				<ul>
-					<li th:each="trip : ${trips}" 
-						th:if="${!trip.startDate.isAfter(T(java.time.LocalDate).now()) 
-							and !trip.endDate.isBefore(T(java.time.LocalDate).now())}">
+					<li th:each="trip : ${trips.?[!startDate.isAfter(T(java.time.LocalDate).now()) and !endDate.isBefore(T(java.time.LocalDate).now())]}" >
 						<a th:href="@{/user/trip/{id}(id=${trip.id})}" class="trip-card current-trip-card">
 							<h3 th:text="${trip.destination}"></h3>
 							<p>
@@ -57,8 +65,7 @@
 			<p>Click to see more details about the trip!</p>
 			<div class="trips-container">
 				<ul>
-					<li th:each="trip : ${trips}" 
-						th:if="${trip.startDate.isAfter(T(java.time.LocalDate).now())}">
+					<li th:each="trip : ${trips.?[startDate.isAfter(T(java.time.LocalDate).now())]}" >
 						<a th:href="@{/user/trip/{id}(id=${trip.id})}" class="trip-card">
 							<h3 th:text="${trip.destination}"></h3>
 							<p>
@@ -87,8 +94,7 @@
 			<p>Click to revisit memories from completed trips!</p>
 			<div class="trips-container">
 				<ul>
-					<li th:each="trip : ${trips}" 
-						th:if="${trip.endDate.isBefore(T(java.time.LocalDate).now())}">
+					<li th:each="trip : ${trips.?[endDate.isBefore(T(java.time.LocalDate).now())]}" >
 						<a th:href="@{/user/trip/{id}(id=${trip.id})}" class="trip-card past-trip-card">
 							<h3 th:text="${trip.destination}"></h3>
 							<p>

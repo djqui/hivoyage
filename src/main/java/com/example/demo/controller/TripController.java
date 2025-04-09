@@ -9,10 +9,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import com.example.demo.model.Trip;
 import com.example.demo.model.ItineraryItem;
 import com.example.demo.model.PackingItem;
+import com.example.demo.model.User;
 import com.example.demo.service.TripService;
+import com.example.demo.security.CustomUserDetails;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDate;
@@ -41,11 +44,12 @@ public class TripController {
 
     // Save trip and redirect to homepage
     @PostMapping("/user/saveTrip")
-    public String saveTrip(Trip trip, RedirectAttributes redirectAttributes) {
+    public String saveTrip(Trip trip, @AuthenticationPrincipal CustomUserDetails userDetails, RedirectAttributes redirectAttributes) {
         try {
-            tripService.save(trip);
+            User user = userDetails.getUser();
+            tripService.save(trip, user);
             redirectAttributes.addFlashAttribute("message", "Trip has been saved successfully!");
-            log.info("Trip saved: {}", trip);
+            log.info("Trip saved: {} for user: {}", trip, user.getEmail());
             return "redirect:/user/homepage";
         } catch (IllegalStateException e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
@@ -56,40 +60,48 @@ public class TripController {
 
     // Display all trips on the homepage
     @GetMapping("/user/homepage")
-    public String showTrips(Model model) {
-        log.info("Handling homepage request");
-        List<Trip> trips = tripService.getAllTrips();
-        log.info("Retrieved {} trips from service", trips.size());
+    public String showTrips(@AuthenticationPrincipal CustomUserDetails userDetails, Model model) {
+        try {
+            User user = userDetails.getUser();
+            log.info("Handling homepage request for user: {}", user.getEmail());
+            List<Trip> trips = tripService.getAllTripsForUser(user);
+            log.info("Retrieved {} trips for user: {}", trips.size(), user.getEmail());
 
-        List<Trip> tripsWithCountdown = trips.stream().map(trip -> {
-            if (trip.getStartDate() != null) {
-                long daysUntilTrip = ChronoUnit.DAYS.between(LocalDate.now(), trip.getStartDate());
-                daysUntilTrip = Math.max(daysUntilTrip, 0); // Avoid negative countdowns
-                trip.setCountdown("D-" + daysUntilTrip);
-                log.info("Trip {}: Set countdown to {}", trip.getDestination(), trip.getCountdown());
-            } else {
-                trip.setCountdown("Date not set");
-                log.info("Trip {}: No start date set", trip.getDestination());
+            if (trips == null) {
+                trips = new ArrayList<>();
+                log.warn("Trips list was null for user: {}, initialized empty list", user.getEmail());
             }
-            return trip;
-        }).collect(Collectors.toList());
 
-        model.addAttribute("trips", tripsWithCountdown);
-        log.info("Added {} trips to model", tripsWithCountdown.size());
-        return "homepage";
+            // Sort trips by date
+            trips.sort((t1, t2) -> {
+                if (t1.getStartDate() == null) return 1;
+                if (t2.getStartDate() == null) return -1;
+                return t1.getStartDate().compareTo(t2.getStartDate());
+            });
+
+            model.addAttribute("trips", trips);
+            model.addAttribute("user", user);
+            log.info("Added {} sorted trips to model for user: {}", trips.size(), user.getEmail());
+            return "homepage";
+        } catch (Exception e) {
+            log.error("Error displaying homepage for user: {}: {}", userDetails.getUsername(), e.getMessage());
+            model.addAttribute("trips", new ArrayList<>());
+            model.addAttribute("error", "An error occurred while loading trips. Please try again later.");
+            return "homepage";
+        }
     }
 
     // Get a trip by ID and display details
     @GetMapping("/user/trip/{id}")
-    public String getTrip(@PathVariable Long id, Model model) {
-        Optional<Trip> optionalTrip = Optional.ofNullable(tripService.getTripById(id));
+    public String getTrip(@PathVariable Long id, @AuthenticationPrincipal CustomUserDetails userDetails, Model model) {
+        User user = userDetails.getUser();
+        Trip trip = tripService.getTripByIdForUser(id, user);
     
-        if (optionalTrip.isEmpty()) {
-            log.warn("Trip with ID {} not found", id);
-            return "redirect:/user/homepage"; // Redirect if trip is not found
+        if (trip == null) {
+            log.warn("Trip with ID {} not found for user: {}", id, user.getEmail());
+            return "redirect:/user/homepage";
         }
     
-        Trip trip = optionalTrip.get();
         LocalDate today = LocalDate.now();
         String status;
     
@@ -342,9 +354,10 @@ public class TripController {
     }
 
     @PostMapping("/user/trip/{id}/delete")
-    public String deleteTrip(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-        log.info("Deleting trip with ID: {}", id);
-        tripService.deleteTrip(id);
+    public String deleteTrip(@PathVariable Long id, @AuthenticationPrincipal CustomUserDetails userDetails, RedirectAttributes redirectAttributes) {
+        User user = userDetails.getUser();
+        log.info("Deleting trip with ID: {} for user: {}", id, user.getEmail());
+        tripService.deleteTripForUser(id, user);
         redirectAttributes.addFlashAttribute("message", "Trip deleted successfully!");
         return "redirect:/user/homepage";
     }

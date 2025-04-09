@@ -23,6 +23,10 @@ public class Trip {
     @Transient
     private String countdown;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
     @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ItineraryItem> itinerary = new ArrayList<>();
 
@@ -53,6 +57,9 @@ public class Trip {
 
     public String getCountdown() { return countdown; }
     public void setCountdown(String countdown) { this.countdown = countdown; }
+
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
 
     public List<ItineraryItem> getItinerary() { return itinerary; }
     public void setItinerary(List<ItineraryItem> itinerary) { this.itinerary = itinerary; }

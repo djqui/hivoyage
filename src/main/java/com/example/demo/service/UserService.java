@@ -5,6 +5,7 @@ import com.example.demo.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import java.util.UUID;
 
 @Service
@@ -13,11 +14,13 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+    private final FileStorageService fileStorageService;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, EmailService emailService) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, EmailService emailService, FileStorageService fileStorageService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
+        this.fileStorageService = fileStorageService;
     }
 
     // 🔹 Save User & Send Email Confirmation
@@ -98,5 +101,50 @@ public class UserService {
     
         System.out.println("🔐 Password updated successfully for: " + user.getEmail());
         return true;
+    }
+
+    @Transactional
+    public User updateProfile(Integer userId, User updatedUser) {
+        System.out.println("🔹 Starting profile update for user ID: " + userId);
+        System.out.println("🔹 Birthday value received: " + updatedUser.getBirthday());
+
+        User existingUser = userRepository.findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        // Check if username is already taken by another user
+        User userWithUsername = userRepository.findByUsername(updatedUser.getUsername());
+        if (userWithUsername != null && !userWithUsername.getId().equals(userId)) {
+            throw new IllegalArgumentException("Username is already taken");
+        }
+
+        // Update user fields
+        existingUser.setFirstName(updatedUser.getFirstName());
+        existingUser.setLastName(updatedUser.getLastName());
+        existingUser.setUsername(updatedUser.getUsername());
+        existingUser.setBirthday(updatedUser.getBirthday());
+        existingUser.setLocation(updatedUser.getLocation());
+
+        System.out.println("🔹 Birthday value before save: " + existingUser.getBirthday());
+        User savedUser = userRepository.save(existingUser);
+        System.out.println("✅ Birthday value after save: " + savedUser.getBirthday());
+
+        return savedUser;
+    }
+
+    @Transactional
+    public User updateProfilePicture(Integer userId, MultipartFile file) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        // Delete old profile picture if it exists
+        if (user.getProfilePicture() != null) {
+            fileStorageService.deleteFile(user.getProfilePicture(), "profile-pictures");
+        }
+
+        // Store new profile picture
+        String filename = fileStorageService.storeFile(file, "profile-pictures");
+        user.setProfilePicture(filename);
+
+        return userRepository.save(user);
     }
 }
