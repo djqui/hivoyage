@@ -26,7 +26,171 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize the itinerary progress
     updateItineraryProgress();
+    
+    // Initialize the map if the container exists
+    initMap();
 });
+
+// Map-related variables
+let map;
+let markers = [];
+let markersByDay = {};
+let dayLayerGroups = {};
+
+// Function to initialize the map
+function initMap() {
+    const mapContainer = document.getElementById('itinerary-map');
+    if (!mapContainer) return;
+
+    // Initialize the map centered on a default location (will be updated later)
+    map = L.map('itinerary-map').setView([51.505, -0.09], 13);
+    
+    // Add the OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    // Add scale control
+    L.control.scale().addTo(map);
+
+    // Collect itinerary data and add markers
+    updateMapWithItinerary();
+}
+
+// Function to update the map with itinerary data
+function updateMapWithItinerary() {
+    if (!map) return;
+    
+    // Clear existing markers
+    clearMapMarkers();
+    
+    // Collect all stop items
+    const dayContainers = document.querySelectorAll('.day-container');
+    let allLocations = [];
+    
+    // Initialize layer groups for each day
+    dayLayerGroups = {};
+    
+    dayContainers.forEach(dayContainer => {
+        const dayNum = dayContainer.dataset.day;
+        const stops = dayContainer.querySelectorAll('.stop-item');
+        
+        // Create a layer group for this day
+        dayLayerGroups[dayNum] = L.layerGroup().addTo(map);
+        markersByDay[dayNum] = [];
+        
+        stops.forEach((stop, index) => {
+            const title = stop.querySelector('.stop-name').textContent;
+            const location = stop.querySelector('.stop-address').textContent;
+            const time = stop.querySelector('.stop-time').textContent;
+            const coordinatesEl = stop.querySelector('.stop-coordinates');
+            
+            if (coordinatesEl && coordinatesEl.textContent) {
+                // Use stored coordinates
+                const [lat, lon] = coordinatesEl.textContent.split(',').map(coord => parseFloat(coord.trim()));
+                if (!isNaN(lat) && !isNaN(lon)) {
+                    addMarkerToMap(lat, lon, title, location, time, dayNum, index + 1);
+                    allLocations.push({ lat, lon });
+                    return;
+                }
+            }
+            
+            // Fallback to geocoding if no coordinates are stored
+            geocodeLocation(location, title, time, dayNum, index + 1);
+            allLocations.push(location);
+        });
+    });
+    
+    // If we have at least one location with coordinates, try to fit the map
+    if (allLocations.length === 0) {
+        // No locations, set default view
+        map.setView([51.505, -0.09], 13);
+    } else if (markers.length > 0) {
+        // Fit to markers (this will happen after geocoding completes for locations without coordinates)
+        setTimeout(() => {
+            adjustMapBounds();
+        }, 500);
+    }
+}
+
+// Function to geocode a location string to coordinates
+function geocodeLocation(locationStr, title, time, dayNum, stopNum) {
+    // Use OpenStreetMap Nominatim API for geocoding
+    const encodedLocation = encodeURIComponent(locationStr);
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodedLocation}&limit=1`)
+        .then(response => response.json())
+        .then(data => {
+            if (data && data.length > 0) {
+                const lat = parseFloat(data[0].lat);
+                const lon = parseFloat(data[0].lon);
+                
+                // Add a marker to the map
+                addMarkerToMap(lat, lon, title, locationStr, time, dayNum, stopNum);
+                
+                // Try to fit map to show all markers
+                adjustMapBounds();
+            } else {
+                console.log(`Could not geocode: ${locationStr}`);
+            }
+        })
+        .catch(error => {
+            console.error('Error geocoding location:', error);
+        });
+}
+
+// Function to add a marker to the map
+function addMarkerToMap(lat, lon, title, location, time, dayNum, stopNum) {
+    // Create marker with custom icon
+    const markerIcon = L.divIcon({
+        className: 'custom-marker-icon',
+        html: `<div class="marker-number day-${dayNum}">${stopNum}</div>`,
+        iconSize: [30, 30],
+        iconAnchor: [15, 30]
+    });
+    
+    const marker = L.marker([lat, lon], { icon: markerIcon })
+        .bindPopup(`<b>${title}</b><br>${location}<br>Time: ${time}<br>Day ${dayNum}, Stop ${stopNum}`)
+        .addTo(dayLayerGroups[dayNum]);
+    
+    // Store the marker reference
+    markers.push(marker);
+    markersByDay[dayNum].push(marker);
+}
+
+// Function to adjust map bounds to show all markers
+function adjustMapBounds() {
+    if (markers.length > 0) {
+        const group = L.featureGroup(markers);
+        map.fitBounds(group.getBounds().pad(0.1)); // Add 10% padding
+    }
+}
+
+// Function to clear all markers from the map
+function clearMapMarkers() {
+    markers.forEach(marker => {
+        if (map.hasLayer(marker)) {
+            map.removeLayer(marker);
+        }
+    });
+    
+    // Clear layer groups
+    for (const dayNum in dayLayerGroups) {
+        if (map.hasLayer(dayLayerGroups[dayNum])) {
+            map.removeLayer(dayLayerGroups[dayNum]);
+        }
+    }
+    
+    markers = [];
+    markersByDay = {};
+    dayLayerGroups = {};
+}
+
+// Call this function after any changes to the itinerary
+function updateMapAfterItineraryChange() {
+    if (map) {
+        updateMapWithItinerary();
+    }
+}
 
 // Global CSRF token handling
 function addCsrfToken(options = {}) {
@@ -117,6 +281,9 @@ function addItineraryDay() {
     `;
     itinerary.appendChild(dayDiv);
     updateItineraryProgress();
+    
+    // Update map with the new day
+    updateMapAfterItineraryChange();
 }
 
 function toggleDay(header) {
@@ -146,7 +313,12 @@ function addStop(button, dayNum) {
             <div class="stop-order">${stopOrder}</div>
             <div class="stop-details">
                 <input type="text" class="stop-name" placeholder="Stop name" required>
-                <input type="text" class="stop-address" placeholder="Address" required>
+                <div class="autocomplete-container">
+                    <div id="autocomplete-${dayNum}-${stopCount}" class="autocomplete-input"></div>
+                    <input type="text" class="stop-address-fallback" placeholder="Location (address)" style="width: 100%; margin-top: 8px; display: none;">
+                    <input type="hidden" class="stop-address" required>
+                    <input type="hidden" class="stop-coordinates" value="">
+                </div>
                 <input type="time" class="stop-time" required>
             </div>
             <div class="stop-actions">
@@ -164,9 +336,93 @@ function addStop(button, dayNum) {
     `;
     stopsList.appendChild(stopItem);
     
+    // Initialize the autocomplete
+    const autocompleteId = `autocomplete-${dayNum}-${stopCount}`;
+    setTimeout(() => {
+        try {
+            initializeAutocomplete(autocompleteId, stopItem);
+        } catch (error) {
+            console.error("Error initializing autocomplete:", error);
+            showFallbackAddressInput(stopItem);
+        }
+    }, 100);
+    
     // Focus the name input
     stopItem.querySelector('.stop-name').focus();
     updateItineraryProgress();
+}
+
+// Show fallback address input if autocomplete fails
+function showFallbackAddressInput(stopItem) {
+    const autocompleteContainer = stopItem.querySelector('.autocomplete-input');
+    const fallbackInput = stopItem.querySelector('.stop-address-fallback');
+    const addressInput = stopItem.querySelector('.stop-address');
+    
+    if (autocompleteContainer) {
+        autocompleteContainer.style.display = 'none';
+    }
+    
+    if (fallbackInput) {
+        fallbackInput.style.display = 'block';
+        
+        // Update hidden address field when fallback input changes
+        fallbackInput.addEventListener('input', function() {
+            addressInput.value = fallbackInput.value;
+        });
+    }
+}
+
+// Function to initialize Geoapify autocomplete
+function initializeAutocomplete(elementId, stopItem) {
+    const autocompleteElement = document.getElementById(elementId);
+    if (!autocompleteElement) return;
+    
+    const addressInput = stopItem.querySelector('.stop-address');
+    const coordinatesInput = stopItem.querySelector('.stop-coordinates');
+    
+    // Check if Geoapify is loaded
+    if (typeof geoapify === 'undefined') {
+        console.error("Geoapify is not loaded. Showing fallback input.");
+        showFallbackAddressInput(stopItem);
+        return;
+    }
+    
+    // Initialize the Geoapify autocomplete
+    try {
+        const autocomplete = new geoapify.GeocoderAutocomplete(
+            autocompleteElement, 
+            '6f258eee01dc46bd82bb8f0866587b04', 
+            {
+                placeholder: 'Enter location',
+                debounceDelay: 300,
+                minLength: 3
+            }
+        );
+        
+        // Add event listener for selection
+        autocomplete.on('select', (location) => {
+            if (location) {
+                // Store the full address
+                addressInput.value = location.properties.formatted;
+                
+                // Store coordinates for mapping
+                const lat = location.properties.lat;
+                const lon = location.properties.lon;
+                coordinatesInput.value = `${lat},${lon}`;
+                
+                console.log('Selected location:', location.properties.formatted);
+                console.log('Coordinates:', lat, lon);
+            }
+        });
+        
+        // Show fallback if autocomplete fails to initialize properly
+        if (!autocompleteElement.querySelector('.geoapify-autocomplete-input')) {
+            throw new Error('Autocomplete did not initialize properly');
+        }
+    } catch (e) {
+        console.error('Error initializing Geoapify Autocomplete:', e);
+        showFallbackAddressInput(stopItem);
+    }
 }
 
 function getStopOrder(num) {
@@ -209,6 +465,7 @@ function editStop(button) {
     const nameElement = stopItem.querySelector('.stop-name');
     const addressElement = stopItem.querySelector('.stop-address');
     const timeElement = stopItem.querySelector('.stop-time');
+    const coordinatesElement = stopItem.querySelector('.stop-coordinates');
     
     // Create input fields
     const nameInput = document.createElement('input');
@@ -217,11 +474,40 @@ function editStop(button) {
     nameInput.value = nameElement.textContent;
     nameInput.setAttribute('data-original', nameElement.textContent);
     
+    // Create autocomplete container
+    const autocompleteContainer = document.createElement('div');
+    autocompleteContainer.className = 'autocomplete-container';
+    
+    const autocompleteInput = document.createElement('div');
+    const autocompleteId = `autocomplete-edit-${Date.now()}`;
+    autocompleteInput.id = autocompleteId;
+    autocompleteInput.className = 'autocomplete-input';
+    
+    // Create fallback input
+    const fallbackInput = document.createElement('input');
+    fallbackInput.type = 'text';
+    fallbackInput.className = 'stop-address-fallback';
+    fallbackInput.placeholder = 'Location (address)';
+    fallbackInput.style.width = '100%';
+    fallbackInput.style.marginTop = '8px';
+    fallbackInput.style.display = 'none';
+    fallbackInput.value = addressElement.textContent;
+    
     const addressInput = document.createElement('input');
-    addressInput.type = 'text';
+    addressInput.type = 'hidden';
     addressInput.className = 'stop-address';
     addressInput.value = addressElement.textContent;
     addressInput.setAttribute('data-original', addressElement.textContent);
+    
+    const coordinatesInput = document.createElement('input');
+    coordinatesInput.type = 'hidden';
+    coordinatesInput.className = 'stop-coordinates';
+    coordinatesInput.value = coordinatesElement ? coordinatesElement.textContent : '';
+    
+    autocompleteContainer.appendChild(autocompleteInput);
+    autocompleteContainer.appendChild(fallbackInput);
+    autocompleteContainer.appendChild(addressInput);
+    autocompleteContainer.appendChild(coordinatesInput);
     
     const timeInput = document.createElement('input');
     timeInput.type = 'time';
@@ -231,7 +517,7 @@ function editStop(button) {
     
     // Replace elements with inputs
     nameElement.replaceWith(nameInput);
-    addressElement.replaceWith(addressInput);
+    addressElement.replaceWith(autocompleteContainer);
     timeElement.replaceWith(timeInput);
     
     // Show/hide buttons
@@ -243,13 +529,84 @@ function editStop(button) {
     
     // Focus the name input
     nameInput.focus();
+    
+    // Initialize autocomplete with a slight delay to ensure the DOM is updated
+    setTimeout(() => {
+        try {
+            initializeAutocompleteWithDefault(autocompleteId, stopItem, addressElement.textContent);
+        } catch (error) {
+            console.error("Error initializing autocomplete for edit:", error);
+            showFallbackAddressInput(stopItem);
+        }
+    }, 100);
+}
+
+// Function to initialize Geoapify autocomplete with a default value
+function initializeAutocompleteWithDefault(elementId, stopItem, defaultValue) {
+    const autocompleteElement = document.getElementById(elementId);
+    if (!autocompleteElement) return;
+    
+    const addressInput = stopItem.querySelector('.stop-address');
+    const coordinatesInput = stopItem.querySelector('.stop-coordinates');
+    
+    // Check if Geoapify is loaded
+    if (typeof geoapify === 'undefined') {
+        console.error("Geoapify is not loaded for edit. Showing fallback input.");
+        showFallbackAddressInput(stopItem);
+        return;
+    }
+    
+    // Initialize the Geoapify autocomplete
+    try {
+        const autocomplete = new geoapify.GeocoderAutocomplete(
+            autocompleteElement, 
+            '6f258eee01dc46bd82bb8f0866587b04',
+            {
+                placeholder: 'Enter location',
+                debounceDelay: 300,
+                minLength: 3,
+                value: defaultValue // Set default value
+            }
+        );
+        
+        // Add event listener for selection
+        autocomplete.on('select', (location) => {
+            if (location) {
+                // Store the full address
+                addressInput.value = location.properties.formatted;
+                
+                // Store coordinates for mapping
+                const lat = location.properties.lat;
+                const lon = location.properties.lon;
+                coordinatesInput.value = `${lat},${lon}`;
+                
+                console.log('Selected location:', location.properties.formatted);
+                console.log('Coordinates:', lat, lon);
+            }
+        });
+        
+        // Show fallback if autocomplete fails to initialize properly
+        if (!autocompleteElement.querySelector('.geoapify-autocomplete-input')) {
+            throw new Error('Autocomplete did not initialize properly for edit');
+        }
+    } catch (e) {
+        console.error('Error initializing Geoapify Autocomplete for edit:', e);
+        showFallbackAddressInput(stopItem);
+    }
 }
 
 function saveStop(button) {
     const stopItem = button.closest('.stop-item');
     const nameInput = stopItem.querySelector('.stop-name');
     const addressInput = stopItem.querySelector('.stop-address');
+    const fallbackInput = stopItem.querySelector('.stop-address-fallback');
+    const coordinatesInput = stopItem.querySelector('.stop-coordinates');
     const timeInput = stopItem.querySelector('.stop-time');
+    
+    // If address input is empty but fallback is visible and has value, use that
+    if (fallbackInput && fallbackInput.style.display !== 'none' && fallbackInput.value.trim()) {
+        addressInput.value = fallbackInput.value.trim();
+    }
     
     // Validate inputs
     if (!nameInput.value.trim() || !addressInput.value.trim() || !timeInput.value) {
@@ -282,6 +639,7 @@ function saveStop(button) {
             title: nameInput.value.trim(),
             location: addressInput.value.trim(),
             description: timeInput.value,
+            coordinates: coordinatesInput.value,
             tripId
         });
         
@@ -295,6 +653,9 @@ function saveStop(button) {
         params.append('title', nameInput.value.trim());
         params.append('location', addressInput.value.trim());
         params.append('description', timeInput.value);
+        if (coordinatesInput.value) {
+            params.append('coordinates', coordinatesInput.value);
+        }
         
         // Use fetch with proper headers
         const headers = {
@@ -336,10 +697,23 @@ function saveStop(button) {
             timeSpan.className = 'stop-time';
             timeSpan.textContent = timeInput.value;
             
+            // Create hidden span for coordinates
+            const coordinatesSpan = document.createElement('span');
+            coordinatesSpan.className = 'stop-coordinates';
+            coordinatesSpan.style.display = 'none';
+            coordinatesSpan.textContent = coordinatesInput.value;
+            
             // Replace inputs with spans
+            const autocompleteContainer = stopItem.querySelector('.autocomplete-container');
+            if (autocompleteContainer) {
+                autocompleteContainer.replaceWith(addressSpan);
+            } else {
+                addressInput.replaceWith(addressSpan);
+            }
+            
             nameInput.replaceWith(nameSpan);
-            addressInput.replaceWith(addressSpan);
             timeInput.replaceWith(timeSpan);
+            stopItem.appendChild(coordinatesSpan);
             
             // Update buttons
             button.innerHTML = '<i class="fas fa-check"></i>';
@@ -362,6 +736,9 @@ function saveStop(button) {
             if (typeof updateCalendarWithItinerary === 'function') {
                 updateCalendarWithItinerary();
             }
+            
+            // Update map with new itinerary
+            updateMapAfterItineraryChange();
         })
         .catch(error => {
             console.error('Error saving itinerary item:', error);
@@ -471,6 +848,9 @@ function removeItem(button) {
         if (typeof updateCalendarWithItinerary === 'function') {
             updateCalendarWithItinerary();
         }
+        
+        // Update map with updated itinerary
+        updateMapAfterItineraryChange();
     })
     .catch(error => {
         console.error('Error removing itinerary item:', error);

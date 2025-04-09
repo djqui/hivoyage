@@ -4,6 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <!-- Leaflet CSS and JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin="" defer></script>
+    <!-- Geoapify Address Autocomplete -->
+    <link rel="stylesheet" href="https://unpkg.com/@geoapify/geocoder-autocomplete@^1/styles/minimal.css">
+    <script src="https://unpkg.com/@geoapify/geocoder-autocomplete@^1/dist/index.min.js" defer></script>
+    
     <link rel="stylesheet" th:href="@{/styles/Header.css}">
     <link rel="stylesheet" th:href="@{/styles/TripDetails.css}">
     <script th:src="@{/scripts/Header.js}" defer></script>
@@ -59,6 +70,14 @@
             <p><strong>Status:</strong> <span th:text="${daysUntilTrip}"></span></p>
 
             <div class="sections-container">
+                <!-- Map Section -->
+                <section class="map-section">
+                    <h2>Trip Map</h2>
+                    <div class="map-container">
+                        <div id="itinerary-map"></div>
+                    </div>
+                </section>
+                
                 <!-- Itinerary Section -->
                 <section class="itinerary-section">
                     <h2>Itinerary</h2>

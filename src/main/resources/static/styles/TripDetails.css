@@ -760,3 +760,94 @@ button {
     align-items: center;
 }
 
+/* Map section styles */
+.map-section {
+    margin-bottom: 2rem;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem;
+    background-color: white;
+}
+
+.map-container {
+    width: 100%;
+    height: 400px;
+    margin-top: 1rem;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+#itinerary-map {
+    width: 100%;
+    height: 100%;
+}
+
+/* Map marker styles */
+.custom-marker-icon {
+    background: transparent;
+}
+
+.marker-number {
+    width: 30px;
+    height: 30px;
+    background-color: var(--secclr);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    border: 2px solid white;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+/* Different colors for different days */
+.marker-number.day-1 { background-color: #E74C3C; }
+.marker-number.day-2 { background-color: #3498DB; }
+.marker-number.day-3 { background-color: #2ECC71; }
+.marker-number.day-4 { background-color: #F39C12; }
+.marker-number.day-5 { background-color: #9B59B6; }
+.marker-number.day-6 { background-color: #1ABC9C; }
+.marker-number.day-7 { background-color: #D35400; }
+/* Add more colors as needed for more days */
+
+/* Autocomplete container styles */
+.autocomplete-container {
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+.autocomplete-input {
+    width: 100%;
+}
+
+.geoapify-autocomplete-input {
+    width: 100%;
+    font-family: var(--mainfont);
+    color: var(--secclr);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: border-color 0.2s ease;
+}
+
+.geoapify-autocomplete-input:focus {
+    outline: none;
+    border-color: var(--secclr);
+}
+
+.geoapify-autocomplete-items {
+    border: 1px solid var(--border);
+    border-radius: 0 0 6px 6px;
+    z-index: 100;
+}
+
+.geoapify-autocomplete-item {
+    font-family: var(--mainfont);
+    color: var(--secclr);
+}
+
+.geoapify-autocomplete-item:hover,
+.geoapify-autocomplete-item.active {
+    background-color: rgba(221, 37, 37, 0.1);
+}
+
