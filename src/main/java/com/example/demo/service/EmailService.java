@@ -22,33 +22,51 @@ public class EmailService {
     public void sendVerificationEmail(User user) {
         String verifyUrl = "http://localhost:8080/user/verify?token=" + user.getVerificationToken();
 
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(fromEmail);
-        message.setTo(user.getEmail());
-        message.setSubject("Confirm Your Email");
-        message.setText("Hello " + user.getFirstName() + ",\n\n"
-            + "Thank you for signing up! Please verify your email by clicking the link below:\n"
-            + verifyUrl + "\n\n"
-            + "If you did not register, please ignore this email.\n\n"
-            + "Best regards,\nHiVoyage Team");
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
+            message.setTo(user.getEmail());
+            message.setSubject("Confirm Your Email");
+            message.setText("Hello " + user.getFirstName() + ",\n\n"
+                + "Thank you for signing up! Please verify your email by clicking the link below:\n"
+                + verifyUrl + "\n\n"
+                + "If you did not register, please ignore this email.\n\n"
+                + "Best regards,\nHiVoyage Team");
 
-        mailSender.send(message);
-        System.out.println("📧 Verification email sent to " + user.getEmail());
+            System.out.println("📧 Attempting to send verification email to " + user.getEmail() + " from " + fromEmail);
+            mailSender.send(message);
+            System.out.println("📧 Verification email sent successfully to " + user.getEmail());
+        } catch (Exception e) {
+            System.out.println("❌ Failed to send verification email: " + e.getMessage());
+            System.out.println("❌ Exception type: " + e.getClass().getName());
+            e.printStackTrace();
+            // Rethrow to be handled by the service
+            throw new RuntimeException("Failed to send verification email. Please check your email configuration.", e);
+        }
     }
 
     // 🔹 Send Password Reset Email
     public void sendResetPasswordEmail(String toEmail, String resetToken) {
         String resetUrl = "http://localhost:8080/resetpassword?token=" + resetToken;
         
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(fromEmail);
-        message.setTo(toEmail);
-        message.setSubject("Password Reset Request");
-        message.setText("Click the link below to reset your password:\n" + resetUrl + "\n\n"
-            + "If you did not request this, please ignore this email.\n\n"
-            + "Best regards,\nHiVoyage Team");
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
+            message.setTo(toEmail);
+            message.setSubject("Password Reset Request");
+            message.setText("Click the link below to reset your password:\n" + resetUrl + "\n\n"
+                + "If you did not request this, please ignore this email.\n\n"
+                + "Best regards,\nHiVoyage Team");
 
-        mailSender.send(message);
-        System.out.println("📧 Reset password email sent to " + toEmail);
+            System.out.println("📧 Attempting to send reset password email to " + toEmail + " from " + fromEmail);
+            mailSender.send(message);
+            System.out.println("📧 Reset password email sent successfully to " + toEmail);
+        } catch (Exception e) {
+            System.out.println("❌ Failed to send reset password email: " + e.getMessage());
+            System.out.println("❌ Exception type: " + e.getClass().getName());
+            e.printStackTrace();
+            // Rethrow to be handled by the service
+            throw new RuntimeException("Failed to send password reset email. Please check your email configuration.", e);
+        }
     }
 }
