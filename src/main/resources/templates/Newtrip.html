@@ -1,12 +1,18 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>HiVoyage | New Trip</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-<link rel="stylesheet" href="/styles/Newtrip.css">
-<link rel="stylesheet" href="/styles/Header.css">
-<script th:src="@{/scripts/Header.js}"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create New Trip</title>
+    <link rel="stylesheet" th:href="@{/styles/Header.css}">
+    <link rel="stylesheet" th:href="@{/styles/Newtrip.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <script th:src="@{/scripts/Header.js}" defer></script>
+    <script th:src="@{/scripts/logout.js}" defer></script>
+    
+    <!-- CSRF Tokens -->
+    <meta name="_csrf" th:if="${_csrf != null}" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:if="${_csrf != null}" th:content="${_csrf.headerName}"/>
 </head>
 <body>
 
@@ -18,12 +24,12 @@
                 <li><a href="/user/travelguides">Travel Guides</a></li>
                 <li class="dropdown">
                     <a href="#" class="dropdown-icon">
-                        <img th:if="${user.profilePicture}" th:src="@{'/uploads/profile-pictures/' + ${user.profilePicture}}" 
+                        <img th:if="${user != null && user.profilePicture != null}" th:src="@{'/uploads/profile-pictures/' + ${user.profilePicture}}" 
                              alt="Profile Picture" class="profile-picture-small">
-                        <i th:unless="${user.profilePicture}" class="fa-solid fa-user"></i>
+                        <i th:unless="${user != null && user.profilePicture != null}" class="fas fa-user"></i>
                     </a>
                     <div class="dropdown-content">
-						<p> Hello, <span th:text="${user.username}"></span>!</p>
+                        <p th:if="${user != null}"> Hello, <span th:text="${user != null ? user.username : 'Guest'}"></span>!</p>
                         <a href="/user/profile">Profile</a>
                         <a href="/logout">Logout</a>
                     </div>

@@ -32,6 +32,11 @@ public class UserService {
             System.out.println("❌ Email already exists: " + user.getEmail());
             throw new IllegalArgumentException("Email already in use!");
         }
+        
+        if (userRepository.findByUsername(user.getUsername()) != null) {
+            System.out.println("❌ Username already exists: " + user.getUsername());
+            throw new IllegalArgumentException("Username already in use!");
+        }
 
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setEnabled(false); // User disabled until email is verified

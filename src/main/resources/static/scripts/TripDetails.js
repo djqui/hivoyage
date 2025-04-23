@@ -182,6 +182,8 @@ function getStopOrder(num) {
 function sortStops(timeInput) {
     const stopsList = timeInput.closest('.stops');
     sortStopsInContainer(stopsList);
+    // Update stop order numbers after sorting
+    updateStopOrderNumbers(stopsList);
 }
 
 // Sort all stops by time in all day containers
@@ -191,6 +193,8 @@ function sortAllStops() {
         const stopsList = container.querySelector('.stops');
         if (stopsList) {
             sortStopsInContainer(stopsList);
+            // Update stop order numbers after sorting
+            updateStopOrderNumbers(stopsList);
         }
     });
 }
@@ -1529,16 +1533,30 @@ function focusMapOnDestination(map, destination) {
 }
 
 // Update all stop order numbers based on their current sorted position
-function updateStopOrderNumbers() {
-    const dayContainers = document.querySelectorAll('.day-container');
-    
-    dayContainers.forEach(container => {
-        const stopItems = container.querySelectorAll('.stop-item');
+function updateStopOrderNumbers(stopsList = null) {
+    if (stopsList) {
+        // Update numbers in a specific stops list
+        const stopItems = stopsList.querySelectorAll('.stop-item');
         stopItems.forEach((item, index) => {
             const orderElement = item.querySelector('.stop-order');
             if (orderElement) {
                 orderElement.textContent = getStopOrder(index + 1);
             }
         });
-    });
+    } else {
+        // Update all stop numbers in all day containers
+        const dayContainers = document.querySelectorAll('.day-container');
+        dayContainers.forEach(container => {
+            const stopsList = container.querySelector('.stops');
+            if (stopsList) {
+                const stopItems = stopsList.querySelectorAll('.stop-item');
+                stopItems.forEach((item, index) => {
+                    const orderElement = item.querySelector('.stop-order');
+                    if (orderElement) {
+                        orderElement.textContent = getStopOrder(index + 1);
+                    }
+                });
+            }
+        });
+    }
 } 
