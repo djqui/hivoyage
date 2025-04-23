@@ -440,10 +440,74 @@ button {
     margin-top: 1rem;
 }
 
+.packing-input-container {
+    display: flex;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1rem;
+}
+
+.packing-input-container input {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 1rem;
+    margin-right: 0.5rem;
+    font-family: var(--mainfont);
+    color: var(--secclr);
+}
+
+.packing-input-container input:focus {
+    outline: none;
+    border-color: var(--secclr);
+    box-shadow: 0 0 0 1px rgba(221, 37, 37, 0.2);
+}
+
+.packing-input-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.packing-input-container .save-btn,
+.packing-input-container .cancel-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+    background: none;
+}
+
+.packing-input-container .save-btn {
+    color: var(--secclr);
+}
+
+.packing-input-container .cancel-btn {
+    color: var(--secclr);
+}
+
+.packing-input-container .save-btn:hover {
+    transform: none;
+    background-color: transparent;
+}
+
+.packing-input-container .cancel-btn:hover {
+    transform: none;
+    background-color: transparent;
+}
+
 .packing-items {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
 }
 
 .packing-item {
@@ -451,47 +515,31 @@ button {
     justify-content: space-between;
     align-items: center;
     padding: 0.5rem;
+    border-bottom: 1px solid var(--border-light, #f0f0f0);
     color: var(--secclr);
 }
 
-.checkbox-container {
+.packing-item:last-child {
+    border-bottom: none;
+}
+
+.packing-item-content {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    cursor: pointer;
-    font-size: 1rem;
-    color: var(--secclr);
     flex: 1;
 }
 
-.checkbox-container input[type="checkbox"] {
-    display: inline-block;
+.packing-item-content input[type="checkbox"] {
     width: 16px;
     height: 16px;
     cursor: pointer;
     accent-color: var(--secclr);
-    border: 2px solid var(--secclr);
-    border-radius: 3px;
-    appearance: none;
-    -webkit-appearance: none;
-    background-color: white;
 }
 
-.checkbox-container input[type="checkbox"]:checked {
-    background-color: var(--secclr);
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill='none' stroke='white' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M6 10l3 3l6-6'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: 12px;
-}
-
-/* Remove the custom checkmark styles */
-.checkmark {
-    display: none;
-}
-
-.checkbox-container input[type="checkbox"]:checked + .checkmark:after {
-    display: none;
+.packing-item.checked .item-name {
+    text-decoration: line-through;
+    color: var(--border);
 }
 
 .item-name {
@@ -499,32 +547,24 @@ button {
     color: var(--secclr);
 }
 
-.item-actions {
+.packing-item-actions {
     display: flex;
     gap: 0.5rem;
     opacity: 0;
     transition: opacity 0.2s;
 }
 
-.packing-item:hover .item-actions {
+.packing-item:hover .packing-item-actions {
     opacity: 1;
 }
 
-.edit-btn, .delete-btn, .save-btn {
-    color: var(--secclr);
-    padding: 4px;
-    border-radius: 4px;
-    transition: background-color 0.2s;
+/* Remove the old checkmark styles */
+.checkbox-container {
+    display: none;
 }
 
-.edit-btn:hover, .delete-btn:hover, .save-btn:hover {
-    background-color: rgba(221, 37, 37, 0.1);
-}
-
-.packing-item {
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 0.5rem;
+.checkmark {
+    display: none;
 }
 
 #add-packing-item {
@@ -538,31 +578,39 @@ button {
     margin-top: 1rem;
     opacity: 0.8;
     transition: opacity 0.2s;
+    background: none;
+    cursor: pointer;
 }
 
 #add-packing-item:hover {
     background-color: rgba(221, 37, 37, 0.05);
+    opacity: 1;
 }
 
 /* Editing state for packing items */
-.packing-item.editing .item-name {
-    display: none;
+.packing-item.editing {
+    background-color: transparent;
+    padding: 0.5rem;
+    border-radius: 4px;
 }
 
-.packing-item.editing .edit-input {
-    display: block;
-    width: 100%;
-    padding: 0.5rem;
+.packing-item.editing .packing-item-content {
+    flex: 1;
+}
+
+.packing-item.editing input.edit-item-input {
+    flex: 1;
+    padding: 0.25rem 0.5rem;
     border: 1px solid var(--secclr);
     border-radius: 4px;
-    font-family: var(--mainfont);
     font-size: 1rem;
     color: var(--secclr);
-    margin-right: 1rem;
+    margin: 0;
     background: white;
+    font-family: var(--mainfont);
 }
 
-.packing-item.editing .item-actions {
+.packing-item.editing .packing-item-actions {
     opacity: 1;
 }
 
@@ -758,5 +806,145 @@ button {
     display: flex;
     justify-content: center;
     align-items: center;
+}
+
+.edit-btn, .delete-btn, .save-btn {
+    background: none;
+    border: none;
+    color: var(--secclr);
+    cursor: pointer;
+    padding: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.edit-btn {
+    color: var(--secclr);
+}
+
+.edit-btn:hover {
+    background-color: transparent;
+    transform: none;
+}
+
+.delete-btn {
+    color: var(--secclr);
+}
+
+.delete-btn:hover {
+    background-color: transparent;
+    transform: none;
+}
+
+.save-btn {
+    color: var(--secclr);
+}
+
+.save-btn:hover {
+    background-color: transparent;
+    transform: none;
+}
+
+/* Map Styles */
+.map-container {
+    margin: 2rem 0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--border);
+}
+
+#trip-map {
+    width: 100%;
+    height: 400px;
+    background-color: #f5f5f5;
+}
+
+.route-day-label {
+    background-color: transparent;
+    border: none;
+}
+
+.day-label-content {
+    background-color: var(--secclr);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    white-space: nowrap;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.stop-label {
+    background-color: transparent;
+    border: none;
+    z-index: 600;
+}
+
+.stop-label-content {
+    background-color: white;
+    color: var(--secclr);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: bold;
+    white-space: nowrap;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--secclr);
+}
+
+/* Map Legend */
+.map-legend {
+    background-color: white;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
+    line-height: 1.5;
+    color: var(--secclr);
+}
+
+.map-legend h4 {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 5px;
+}
+
+.map-legend .legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+    font-size: 12px;
+}
+
+.map-legend .fas {
+    width: 20px;
+    text-align: center;
+    margin-right: 5px;
+}
+
+.map-legend .line-sample {
+    width: 20px;
+    height: 3px;
+    margin-right: 5px;
+}
+
+.map-legend .stop-label-sample {
+    background-color: white;
+    color: var(--secclr);
+    padding: 1px 5px;
+    border-radius: 8px;
+    font-size: 8px;
+    border: 1px solid var(--secclr);
+    margin-right: 5px;
 }
 

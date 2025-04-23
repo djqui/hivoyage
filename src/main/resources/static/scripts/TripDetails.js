@@ -178,9 +178,26 @@ function getStopOrder(num) {
     }
 }
 
+// Sort stops by time in a specific day container
 function sortStops(timeInput) {
     const stopsList = timeInput.closest('.stops');
-    const stopItems = Array.from(stopsList.querySelectorAll('.stop-item'));
+    sortStopsInContainer(stopsList);
+}
+
+// Sort all stops by time in all day containers
+function sortAllStops() {
+    const dayContainers = document.querySelectorAll('.day-container');
+    dayContainers.forEach(container => {
+        const stopsList = container.querySelector('.stops');
+        if (stopsList) {
+            sortStopsInContainer(stopsList);
+        }
+    });
+}
+
+// Helper function to sort stops within a container
+function sortStopsInContainer(stopsList) {
+    const stopItems = Array.from(stopsList.querySelectorAll('li'));
     
     stopItems.sort((a, b) => {
         // Check if the time element is an input or a span
@@ -200,7 +217,7 @@ function sortStops(timeInput) {
     
     // Clear and re-append sorted items
     stopItems.forEach(item => {
-        stopsList.appendChild(item.parentElement);
+        stopsList.appendChild(item);
     });
 }
 
@@ -483,8 +500,32 @@ function removeItem(button) {
 
 // packing list functions
 function addPackingItem() {
-    const packingList = document.getElementById("packing-list");
-    const nameInput = document.getElementById("packing-item-name");
+    // Show the input container
+    const inputContainer = document.getElementById('packing-input-container');
+    inputContainer.style.display = 'flex';
+    
+    // Focus on the input field
+    const nameInput = document.getElementById('packing-item-name');
+    nameInput.value = '';
+    nameInput.focus();
+    
+    // Hide the add button temporarily
+    const addButton = document.getElementById('add-packing-item');
+    addButton.style.display = 'none';
+}
+
+function cancelAddPackingItem() {
+    // Hide the input container
+    const inputContainer = document.getElementById('packing-input-container');
+    inputContainer.style.display = 'none';
+    
+    // Show the add button again
+    const addButton = document.getElementById('add-packing-item');
+    addButton.style.display = 'flex';
+}
+
+function saveNewPackingItem() {
+    const nameInput = document.getElementById('packing-item-name');
     
     // Validate input
     if (!nameInput.value.trim()) {
@@ -493,6 +534,11 @@ function addPackingItem() {
     }
     
     const tripId = window.location.pathname.split('/').pop();
+    
+    // Show loading indicator
+    const saveBtn = document.querySelector('.packing-input-buttons .save-btn');
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
     
     // Send to backend using fetchWithCsrf helper
     fetchWithCsrf(`/user/trip/${tripId}/savePackingItem`, {
@@ -513,20 +559,33 @@ function addPackingItem() {
                 <span class="item-name">${nameInput.value}</span>
             </div>
             <div class="packing-item-actions">
-                <button class="edit-btn" onclick="editPackingItem(this)">
-                    <i class="fas fa-edit"></i>
+                <button class="edit-btn" onclick="editPackingItem(this)" title="Edit">
+                    <i class="fas fa-pen"></i>
                 </button>
-                <button class="delete-btn" onclick="deletePackingItem(this)">
-                    <i class="fas fa-trash"></i>
+                <button class="delete-btn" onclick="deletePackingItem(this)" title="Delete">
+                    <i class="fas fa-times"></i>
                 </button>
             </div>
         `;
         
         // Add to list
+        const packingList = document.getElementById("packing-list");
         packingList.appendChild(item);
         
-        // Clear input
+        // Clear input and hide container
         nameInput.value = '';
+        
+        // Reset button
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="fas fa-check"></i>';
+        
+        // Hide the input container
+        const inputContainer = document.getElementById('packing-input-container');
+        inputContainer.style.display = 'none';
+        
+        // Show the add button again
+        const addButton = document.getElementById('add-packing-item');
+        addButton.style.display = 'flex';
         
         // Update progress
         updatePackingProgress();
@@ -534,6 +593,10 @@ function addPackingItem() {
     .catch(error => {
         console.error('Error adding packing item:', error);
         alert('Failed to add packing item. Please try again.');
+        
+        // Reset button
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="fas fa-check"></i>';
     });
 }
 
@@ -555,11 +618,15 @@ function editPackingItem(button) {
     // Add save button
     const saveBtn = document.createElement('button');
     saveBtn.className = 'save-btn';
+    saveBtn.setAttribute('title', 'Save');
     saveBtn.innerHTML = '<i class="fas fa-check"></i>';
     saveBtn.onclick = function() { savePackingItem(this, originalName); };
     
     const editBtn = packingItem.querySelector('.edit-btn');
     editBtn.replaceWith(saveBtn);
+    
+    // Add a class to indicate item is being edited
+    packingItem.classList.add('editing');
 }
 
 function savePackingItem(button, originalName) {
@@ -574,6 +641,10 @@ function savePackingItem(button, originalName) {
     }
     
     const tripId = window.location.pathname.split('/').pop();
+    
+    // Show loading state
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
     
     // Send to backend using fetchWithCsrf helper
     fetchWithCsrf(`/user/trip/${tripId}/updatePackingItem`, {
@@ -594,15 +665,22 @@ function savePackingItem(button, originalName) {
         // Replace save button with edit button
         const editBtn = document.createElement('button');
         editBtn.className = 'edit-btn';
-        editBtn.innerHTML = '<i class="fas fa-edit"></i>';
+        editBtn.setAttribute('title', 'Edit');
+        editBtn.innerHTML = '<i class="fas fa-pen"></i>';
         editBtn.onclick = function() { editPackingItem(this); };
         
         const saveBtn = packingItem.querySelector('.save-btn');
         saveBtn.replaceWith(editBtn);
+        
+        // Remove editing class
+        packingItem.classList.remove('editing');
     })
     .catch(error => {
         console.error('Error updating packing item:', error);
         alert('Failed to update packing item. Please try again.');
+        // Reset button
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-check"></i>';
     });
 }
 
@@ -611,7 +689,15 @@ function deletePackingItem(button) {
     const nameElement = packingItem.querySelector('.item-name');
     const itemName = nameElement.textContent;
     
+    if (!confirm(`Are you sure you want to remove "${itemName}" from your packing list?`)) {
+        return;
+    }
+    
     const tripId = window.location.pathname.split('/').pop();
+    
+    // Show loading state
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
     
     // Send to backend using fetchWithCsrf helper
     fetchWithCsrf(`/user/trip/${tripId}/deletePackingItem`, {
@@ -623,14 +709,23 @@ function deletePackingItem(button) {
     })
     .then(response => response.text())
     .then(() => {
-        // Remove item
-        packingItem.remove();
-        // Update progress
-        updatePackingProgress();
+        // Remove item with fade-out effect
+        packingItem.style.opacity = '0';
+        packingItem.style.transition = 'opacity 0.3s';
+        
+        setTimeout(() => {
+            // Remove item after fade-out
+            packingItem.remove();
+            // Update progress
+            updatePackingProgress();
+        }, 300);
     })
     .catch(error => {
         console.error('Error deleting packing item:', error);
         alert('Failed to delete packing item. Please try again.');
+        // Reset button
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-times"></i>';
     });
 }
 
@@ -670,8 +765,8 @@ function updatePackingItemStatus(checkbox) {
 }
 
 function updatePackingProgress() {
-    const packingItems = document.querySelectorAll('.packing-item');
-    const checkedItems = document.querySelectorAll('.packing-item input[type="checkbox"]:checked');
+    const packingItems = document.querySelectorAll('#packing-list .packing-item');
+    const checkedItems = document.querySelectorAll('#packing-list .packing-item input[type="checkbox"]:checked');
     
     const progressEl = document.getElementById('packing-progress-text');
     
@@ -795,8 +890,12 @@ function deleteTrip() {
     });
 }
 
-// Initialize progress indicators
+// Initialize steps on page load
 document.addEventListener('DOMContentLoaded', function() {
+    // Sort all stops by time on page load
+    sortAllStops();
+    
+    // Initialize the progress indicators
     updatePackingProgress();
     updateItineraryProgress();
     
@@ -806,7 +905,7 @@ document.addEventListener('DOMContentLoaded', function() {
         packingInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                addPackingItem();
+                saveNewPackingItem();
             }
         });
     }
@@ -1124,4 +1223,322 @@ const originalSaveStop = saveStop;
 saveStop = function(element) {
     originalSaveStop(element);
     setTimeout(updateCalendarWithItinerary, 500);
-}; 
+};
+
+// Geoapify Map Integration
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize the map
+    initTripMap();
+    
+    // Rest of your existing DOMContentLoaded code
+    updatePackingProgress();
+    updateItineraryProgress();
+    
+    // Handle keyboard event for adding packing items
+    const packingInput = document.getElementById('packing-item-name');
+    if (packingInput) {
+        packingInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                saveNewPackingItem();
+            }
+        });
+    }
+});
+
+function initTripMap() {
+    const mapElement = document.getElementById('trip-map');
+    if (!mapElement) return;
+    
+    // Get destination from the page
+    const destination = document.querySelector('.trip-header h1').textContent.trim();
+    if (!destination) return;
+    
+    // Initialize the map centered on a default location
+    const map = L.map('trip-map').setView([0, 0], 2);
+    
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    
+    // Add map legend
+    addMapLegend(map);
+    
+    // Check if there are any stops already
+    const hasStops = document.querySelectorAll('.stop-item').length > 0;
+    
+    // If there are stops, we'll let addItineraryMarkersToMap handle the map view
+    if (hasStops) {
+        // Pass the map and destination for fallback
+        addItineraryMarkersToMap(map, destination);
+    } else {
+        // No stops, so focus on the destination
+        focusMapOnDestination(map, destination);
+    }
+}
+
+function addMapLegend(map) {
+    // Create a custom legend control
+    const legend = L.control({ position: 'bottomright' });
+    
+    legend.onAdd = function(map) {
+        const div = L.DomUtil.create('div', 'map-legend');
+        div.innerHTML = `
+            <h4>Map Legend</h4>
+            <div class="legend-item">
+                <i class="fas fa-map-marker-alt" style="color: red;"></i>
+                <span>Destination</span>
+            </div>
+            <div class="legend-item">
+                <i class="fas fa-map-marker-alt" style="color: blue;"></i>
+                <span>Itinerary Stops</span>
+            </div>
+            <div class="legend-item">
+                <div class="line-sample" style="background-color: red;"></div>
+                <span>Day 1 Route</span>
+            </div>
+            <div class="legend-item">
+                <div class="line-sample" style="background-color: blue;"></div>
+                <span>Day 2 Route</span>
+            </div>
+            <div class="legend-item">
+                <div class="line-sample" style="background-color: green;"></div>
+                <span>Day 3 Route</span>
+            </div>
+            <div class="legend-item">
+                <div class="stop-label-sample">Stop 1: 9:00</div>
+                <span>Stops ordered by time</span>
+            </div>
+        `;
+        return div;
+    };
+    
+    legend.addTo(map);
+}
+
+function addItineraryMarkersToMap(map, destination) {
+    // Get all itinerary stops grouped by day
+    const dayContainers = document.querySelectorAll('.day-container');
+    if (!dayContainers.length) {
+        // If no days, focus on destination
+        focusMapOnDestination(map, destination);
+        return;
+    }
+    
+    // Array to store all geocoded stops
+    const allStops = [];
+    let stopPromises = [];
+    let firstStopProcessed = false;
+    
+    // Process each day
+    dayContainers.forEach((dayContainer) => {
+        const dayNum = dayContainer.dataset.day;
+        const stopItems = dayContainer.querySelectorAll('.stop-item');
+        
+        // Skip days with no stops
+        if (!stopItems.length) return;
+        
+        // Process each stop in this day
+        const dayStops = [];
+        
+        // Convert NodeList to Array to sort by time
+        const stopItemsArray = Array.from(stopItems);
+        
+        // Sort stops by time
+        stopItemsArray.sort((a, b) => {
+            const timeA = a.querySelector('.stop-time').textContent.trim();
+            const timeB = b.querySelector('.stop-time').textContent.trim();
+            
+            // If both have valid time values, compare them
+            if (timeA && timeB) {
+                return timeA.localeCompare(timeB);
+            }
+            // If only one has a time value, prioritize the one with a time
+            if (timeA) return -1;
+            if (timeB) return 1;
+            
+            // If neither has a time, keep original order
+            return 0;
+        });
+        
+        stopItemsArray.forEach((stop, index) => {
+            const locationElement = stop.querySelector('.stop-address');
+            if (!locationElement) return;
+            
+            const location = locationElement.textContent.trim();
+            if (!location) return;
+            
+            const stopName = stop.querySelector('.stop-name').textContent.trim();
+            const stopTime = stop.querySelector('.stop-time').textContent.trim();
+            
+            // Create a promise for geocoding this stop
+            const stopPromise = fetch(`https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(location)}&apiKey=${MapConfig.apiKey}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.features && data.features.length > 0) {
+                        const feature = data.features[0];
+                        const [longitude, latitude] = feature.geometry.coordinates;
+                        
+                        // Create stop object
+                        const stopObj = {
+                            dayNum,
+                            index,  // This is now the sorted index
+                            name: stopName,
+                            location,
+                            time: stopTime,
+                            coordinates: [latitude, longitude]
+                        };
+                        
+                        // Add to day stops
+                        dayStops.push(stopObj);
+                        
+                        // Add marker for this stop with time information
+                        const marker = L.marker([latitude, longitude]).addTo(map);
+                        const popupContent = stopTime 
+                            ? `<b>Day ${dayNum}: ${stopName}</b><br>${location}<br><i>Time: ${stopTime}</i>` 
+                            : `<b>Day ${dayNum}: ${stopName}</b><br>${location}`;
+                        marker.bindPopup(popupContent);
+                        
+                        // Focus map on the first stop we process (earliest by day/time)
+                        if (!firstStopProcessed) {
+                            map.setView([latitude, longitude], 10);
+                            marker.openPopup();
+                            firstStopProcessed = true;
+                        }
+                        
+                        return stopObj;
+                    }
+                    return null;
+                })
+                .catch(error => {
+                    console.error('Error geocoding stop:', error);
+                    return null;
+                });
+            
+            stopPromises.push(stopPromise);
+        });
+        
+        // When all stops for this day are geocoded, add them to the array
+        Promise.all(stopPromises)
+            .then(results => {
+                // Filter out nulls and sort by index (which is already sorted by time)
+                const validStops = results.filter(r => r !== null)
+                    .filter(s => s.dayNum === dayNum)
+                    .sort((a, b) => a.index - b.index);
+                
+                if (validStops.length >= 2) {
+                    // If we have at least 2 stops, create a route for this day
+                    drawRouteBetweenStops(map, validStops);
+                }
+                
+                // If no stops were successfully processed, fall back to the destination
+                if (!firstStopProcessed && results.every(r => r === null)) {
+                    focusMapOnDestination(map, destination);
+                }
+            });
+    });
+}
+
+function drawRouteBetweenStops(map, stops) {
+    if (stops.length < 2) return;
+    
+    const dayNum = stops[0].dayNum;
+    const waypoints = stops.map(stop => stop.coordinates.join(','));
+    
+    // Get color based on day number (cycle through a few colors)
+    const colors = ['red', 'blue', 'green', 'purple', 'orange'];
+    const color = colors[(dayNum - 1) % colors.length];
+    
+    // Build the URL for the Geoapify Routing API
+    let routeUrl = `https://api.geoapify.com/v1/routing?waypoints=${waypoints.join('|')}&mode=drive&apiKey=${MapConfig.apiKey}`;
+    
+    // Fetch the route
+    fetch(routeUrl)
+        .then(response => response.json())
+        .then(data => {
+            if (data.features && data.features.length > 0) {
+                // Draw the route on the map
+                const route = L.geoJSON(data, {
+                    style: {
+                        color: color,
+                        weight: 4,
+                        opacity: 0.7
+                    }
+                }).addTo(map);
+                
+                // Add labels for each stop with its time
+                stops.forEach((stop, index) => {
+                    // Show the stop number and time if available
+                    let labelText = `Stop ${index + 1}`;
+                    if (stop.time) {
+                        labelText += `: ${stop.time}`;
+                    }
+                    
+                    // Add a label
+                    L.marker([stop.coordinates[0], stop.coordinates[1]], {
+                        icon: L.divIcon({
+                            className: 'stop-label',
+                            html: `<div class="stop-label-content">${labelText}</div>`,
+                            iconSize: [80, 20],
+                            iconAnchor: [40, 20]
+                        })
+                    }).addTo(map);
+                });
+                
+                // Add a label to indicate the day
+                const midPoint = Math.floor(stops.length / 2);
+                const midStopCoords = stops[midPoint].coordinates;
+                L.marker([midStopCoords[0] + 0.01, midStopCoords[1]], {
+                    icon: L.divIcon({
+                        className: 'route-day-label',
+                        html: `<div class="day-label-content">Day ${dayNum}</div>`,
+                        iconSize: [60, 20],
+                        iconAnchor: [30, 10]
+                    })
+                }).addTo(map);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching route:', error);
+        });
+}
+
+// Function to focus map on destination
+function focusMapOnDestination(map, destination) {
+    fetch(`https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(destination)}&apiKey=${MapConfig.apiKey}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.features && data.features.length > 0) {
+                const location = data.features[0];
+                const [longitude, latitude] = location.geometry.coordinates;
+                
+                // Center map on destination
+                map.setView([latitude, longitude], 10);
+                
+                // Add marker for destination
+                const marker = L.marker([latitude, longitude]).addTo(map);
+                marker.bindPopup(`<b>${destination}</b>`).openPopup();
+            } else {
+                console.warn('Could not geocode destination:', destination);
+            }
+        })
+        .catch(error => {
+            console.error('Error geocoding destination:', error);
+        });
+}
+
+// Update all stop order numbers based on their current sorted position
+function updateStopOrderNumbers() {
+    const dayContainers = document.querySelectorAll('.day-container');
+    
+    dayContainers.forEach(container => {
+        const stopItems = container.querySelectorAll('.stop-item');
+        stopItems.forEach((item, index) => {
+            const orderElement = item.querySelector('.stop-order');
+            if (orderElement) {
+                orderElement.textContent = getStopOrder(index + 1);
+            }
+        });
+    });
+} 
