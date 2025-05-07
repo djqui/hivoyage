@@ -32,7 +32,6 @@
         <nav class="header-wrapper">
             <ul class="header-nav">
                 <li><a href="/user/homepage">Dashboard</a></li>
-                <li><a href="/user/travelguides">Travel Guides</a></li>
                 <li class="dropdown">
                     <a href="#" class="dropdown-icon">
                         <img th:if="${user != null && user.profilePicture != null}" th:src="@{'/uploads/profile-pictures/' + ${user.profilePicture}}" 
@@ -80,7 +79,7 @@
                 <div class="all-days">
                     <div id="itinerary">
                         <!-- Show empty day 1 only if there are no itinerary items -->
-                        <div th:if="${trip.itinerary == null || trip.itinerary.isEmpty()}" class="day-container" data-day="1">
+                        <div th:if="${trip.itinerary == null || trip.itinerary.isEmpty()}" class="day-container collapsed" data-day="1">
                             <div class="day-header" onclick="toggleDay(this)">
                                 <div class="day-info">
                                     <i class="fas fa-chevron-down"></i>
@@ -95,7 +94,7 @@
                                     </button>
                                 </div>
                             </div>
-                            <div class="day-content">
+                            <div class="day-content" style="display: none;">
                                 <ul class="stops" id="stops-day-1"></ul>
                                 <button type="button" class="add-place-btn" onclick="addStop(this, 1)">
                                     <i class="fas fa-plus"></i>
@@ -106,7 +105,7 @@
                         <!-- Show existing days -->
                         <div th:each="item, itemStat : ${trip.itinerary}" 
                              th:if="${trip.itinerary != null && !trip.itinerary.isEmpty() && (itemStat.index == 0 || item.day != trip.itinerary[itemStat.index-1].day)}"
-                             class="day-container"
+                             class="day-container collapsed"
                              th:data-day="${item.day + 1}">
                             <div class="day-header" onclick="toggleDay(this)">
                                 <div class="day-info">
@@ -122,7 +121,7 @@
                                     </button>
                                 </div>
                             </div>
-                            <div class="day-content">
+                            <div class="day-content" style="display: none;">
                                 <ul class="stops" th:id="'stops-day-' + ${item.day + 1}">
                                     <li th:each="stop : ${trip.itinerary}" th:if="${stop.day == item.day}">
                                         <div class="stop-item">

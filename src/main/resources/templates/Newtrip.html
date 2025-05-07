@@ -21,7 +21,6 @@
         <nav class="header-wrapper">
             <ul class="header-nav">
                 <li><a href="/user/homepage">Dashboard</a></li>
-                <li><a href="/user/travelguides">Travel Guides</a></li>
                 <li class="dropdown">
                     <a href="#" class="dropdown-icon">
                         <img th:if="${user != null && user.profilePicture != null}" th:src="@{'/uploads/profile-pictures/' + ${user.profilePicture}}" 

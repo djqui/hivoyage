@@ -123,16 +123,231 @@ function toggleDay(header) {
     const dayContainer = header.closest('.day-container');
     const content = dayContainer.querySelector('.day-content');
     const chevron = header.querySelector('.fa-chevron-down');
+    const dayNumber = dayContainer.dataset.day;
     
     if (dayContainer.classList.contains('collapsed')) {
+        // Collapse all other days
+        document.querySelectorAll('.day-container').forEach(container => {
+            if (container !== dayContainer && !container.classList.contains('collapsed')) {
+                const otherContent = container.querySelector('.day-content');
+                const otherChevron = container.querySelector('.fa-chevron-down');
+                otherContent.style.display = 'none';
+                otherChevron.style.transform = 'rotate(-90deg)';
+                container.classList.add('collapsed');
+            }
+        });
+        // Expand this day
         content.style.display = 'block';
         chevron.style.transform = 'rotate(0deg)';
         dayContainer.classList.remove('collapsed');
+        // Focus map on the stops of this day
+        const stops = content.querySelectorAll('.stop-item');
+        console.log('toggleDay: Found', stops.length, 'stops for day', dayNumber);
+        const mapElement = document.getElementById('trip-map');
+        if (mapElement && mapElement.map) {
+            const map = mapElement.map;
+            // Clear all markers and routes
+            map.eachLayer((layer) => {
+                if (layer instanceof L.Marker || layer instanceof L.GeoJSON) {
+                    map.removeLayer(layer);
+                }
+            });
+            if (stops.length > 0) {
+                // Show and focus on stops for this day
+                const bounds = L.latLngBounds([]);
+                let stopPromises = [];
+                stops.forEach(stop => {
+                    const location = stop.querySelector('.stop-address').textContent;
+                    if (location) {
+                        console.log('toggleDay: Geocoding location:', location);
+                        const stopPromise = fetch(`https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(location)}&apiKey=${MapConfig.apiKey}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                console.log('toggleDay: Geocode response for', location, data);
+                                if (data.features && data.features.length > 0) {
+                                    const [lon, lat] = data.features[0].geometry.coordinates;
+                                    bounds.extend([lat, lon]);
+                                    // Add marker for this stop (default icon)
+                                    const marker = L.marker([lat, lon]).addTo(map);
+                                    const stopName = stop.querySelector('.stop-name').textContent;
+                                    const stopTime = stop.querySelector('.stop-time').textContent;
+                                    marker.bindPopup(`<b>${stopName}</b><br>${location}<br><i>Time: ${stopTime}</i>`);
+                                    console.log('toggleDay: Added marker for', stopName, lon, lat);
+                                    // Add stop order/time label
+                                    const stopIndex = Array.from(stops).indexOf(stop);
+                                    let labelText = `Stop ${stopIndex + 1}`;
+                                    if (stopTime) labelText += `: ${stopTime}`;
+                                    L.marker([lat, lon], {
+                                        icon: L.divIcon({
+                                            className: 'stop-label',
+                                            html: `<div class="stop-label-content">${labelText}</div>`,
+                                            iconSize: [80, 20],
+                                            iconAnchor: [40, 20]
+                                        })
+                                    }).addTo(map);
+                                    return { lat, lon };
+                                } else {
+                                    console.warn('toggleDay: No geocode results for', location);
+                                }
+                                return null;
+                            })
+                            .catch(error => {
+                                console.error('toggleDay: Error geocoding location:', location, error);
+                                return null;
+                            });
+                        stopPromises.push(stopPromise);
+                    }
+                });
+                Promise.all(stopPromises)
+                    .then(results => {
+                        const validStops = results.filter(r => r !== null);
+                        console.log('toggleDay: validStops:', validStops.length);
+                        if (validStops.length > 0) {
+                            map.fitBounds(bounds, { padding: [50, 50] });
+                            console.log('toggleDay: fitBounds to stops');
+                        }
+                        if (validStops.length >= 2) {
+                            // Draw route between stops
+                            const waypoints = validStops.map(stop => `${stop.lat},${stop.lon}`);
+                            const routeUrl = `https://api.geoapify.com/v1/routing?waypoints=${waypoints.join('|')}&mode=drive&apiKey=${MapConfig.apiKey}`;
+                            console.log('toggleDay: Routing waypoints:', waypoints);
+                            console.log('toggleDay: Routing URL:', routeUrl);
+                            fetch(routeUrl)
+                                .then(response => response.json())
+                                .then(data => {
+                                    console.log('toggleDay: Routing API response:', data);
+                                    if (data.features && data.features.length > 0) {
+                                        L.geoJSON(data, {
+                                            style: {
+                                                color: 'red',
+                                                weight: 4,
+                                                opacity: 0.7
+                                            }
+                                        }).addTo(map);
+                                    } else {
+                                        console.warn('toggleDay: No route features returned from API');
+                                    }
+                                })
+                                .catch(error => console.error('toggleDay: Error fetching route:', error));
+                        }
+                    });
+            } else {
+                // No stops: show and focus on destination pin
+                const destination = document.querySelector('.trip-header h1').textContent.trim();
+                fetch(`https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(destination)}&apiKey=${MapConfig.apiKey}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.features && data.features.length > 0) {
+                            const [lon, lat] = data.features[0].geometry.coordinates;
+                            map.setView([lat, lon], 10);
+                            L.marker([lat, lon]).addTo(map).bindPopup(`<b>${destination}</b>`).openPopup();
+                            console.log('toggleDay: Showed destination marker', lon, lat);
+                        } else {
+                            console.warn('toggleDay: No geocode results for destination', destination);
+                        }
+                    });
+            }
+        }
     } else {
         content.style.display = 'none';
         chevron.style.transform = 'rotate(-90deg)';
         dayContainer.classList.add('collapsed');
+        // When collapsing, show and focus on destination pin
+        const mapElement = document.getElementById('trip-map');
+        if (mapElement && mapElement.map) {
+            const map = mapElement.map;
+            map.eachLayer((layer) => {
+                if (layer instanceof L.Marker || layer instanceof L.GeoJSON) {
+                    map.removeLayer(layer);
+                }
+            });
+            const destination = document.querySelector('.trip-header h1').textContent.trim();
+            fetch(`https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(destination)}&apiKey=${MapConfig.apiKey}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.features && data.features.length > 0) {
+                        const [lon, lat] = data.features[0].geometry.coordinates;
+                        map.setView([lat, lon], 10);
+                        L.marker([lat, lon]).addTo(map).bindPopup(`<b>${destination}</b>`).openPopup();
+                        console.log('toggleDay: Showed destination marker (collapse)', lon, lat);
+                    } else {
+                        console.warn('toggleDay: No geocode results for destination (collapse)', destination);
+                    }
+                });
+        }
     }
+}
+
+function focusMapOnDayStops(dayNumber) {
+    const stops = document.querySelectorAll(`.day-container[data-day="${dayNumber}"] .stop-item`);
+    if (stops.length === 0) return;
+
+    const map = document.getElementById('trip-map').map;
+    if (!map) return;
+
+    // Clear existing markers and routes
+    map.eachLayer((layer) => {
+        if (layer instanceof L.Marker || layer instanceof L.GeoJSON) {
+            map.removeLayer(layer);
+        }
+    });
+
+    const bounds = L.latLngBounds([]);
+    let hasValidCoordinates = false;
+    let stopPromises = [];
+
+    stops.forEach(stop => {
+        const location = stop.querySelector('.stop-address').textContent;
+        if (location) {
+            // Use Geoapify to geocode the location
+            const stopPromise = fetch(`https://api.geoapify.com/v1/geocode/search?text=${encodeURIComponent(location)}&apiKey=${MapConfig.apiKey}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.features && data.features.length > 0) {
+                        const [lon, lat] = data.features[0].geometry.coordinates;
+                        bounds.extend([lat, lon]);
+                        hasValidCoordinates = true;
+                        
+                        // Add marker for this stop
+                        const marker = L.marker([lat, lon]).addTo(map);
+                        const stopName = stop.querySelector('.stop-name').textContent;
+                        const stopTime = stop.querySelector('.stop-time').textContent;
+                        marker.bindPopup(`<b>${stopName}</b><br>${location}<br><i>Time: ${stopTime}</i>`);
+                        
+                        // Add stop order/time label
+                        const stopIndex = Array.from(stops).indexOf(stop);
+                        let labelText = `Stop ${stopIndex + 1}`;
+                        if (stopTime) labelText += `: ${stopTime}`;
+                        L.marker([lat, lon], {
+                            icon: L.divIcon({
+                                className: 'stop-label',
+                                html: `<div class="stop-label-content">${labelText}</div>`,
+                                iconSize: [80, 20],
+                                iconAnchor: [40, 20]
+                            })
+                        }).addTo(map);
+                        
+                        return { lat, lon };
+                    }
+                    return null;
+                })
+                .catch(error => {
+                    console.error('Error geocoding location:', error);
+                    return null;
+                });
+            
+            stopPromises.push(stopPromise);
+        }
+    });
+
+    // When all stops are geocoded, draw the route and fit bounds
+    Promise.all(stopPromises)
+        .then(results => {
+            const validStops = results.filter(r => r !== null);
+            if (validStops.length > 0) {
+                map.fitBounds(bounds, { padding: [50, 50] });
+            }
+        });
 }
 
 function addStop(button, dayNum) {
@@ -1261,6 +1476,9 @@ function initTripMap() {
     // Initialize the map centered on a default location
     const map = L.map('trip-map').setView([0, 0], 2);
     
+    // Store the map instance on the DOM element for global access
+    mapElement.map = map;
+    
     // Add OpenStreetMap tiles
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors'
@@ -1269,17 +1487,8 @@ function initTripMap() {
     // Add map legend
     addMapLegend(map);
     
-    // Check if there are any stops already
-    const hasStops = document.querySelectorAll('.stop-item').length > 0;
-    
-    // If there are stops, we'll let addItineraryMarkersToMap handle the map view
-    if (hasStops) {
-        // Pass the map and destination for fallback
-        addItineraryMarkersToMap(map, destination);
-    } else {
-        // No stops, so focus on the destination
+    // By default, just focus on the destination
         focusMapOnDestination(map, destination);
-    }
 }
 
 function addMapLegend(map) {
@@ -1291,24 +1500,12 @@ function addMapLegend(map) {
         div.innerHTML = `
             <h4>Map Legend</h4>
             <div class="legend-item">
-                <i class="fas fa-map-marker-alt" style="color: red;"></i>
-                <span>Destination</span>
+                <i class="fas fa-map-marker-alt" style="color: #3388ff;"></i>
+                <span>Destination/Stops</span>
             </div>
             <div class="legend-item">
-                <i class="fas fa-map-marker-alt" style="color: blue;"></i>
-                <span>Itinerary Stops</span>
-            </div>
-            <div class="legend-item">
-                <div class="line-sample" style="background-color: red;"></div>
-                <span>Day 1 Route</span>
-            </div>
-            <div class="legend-item">
-                <div class="line-sample" style="background-color: blue;"></div>
-                <span>Day 2 Route</span>
-            </div>
-            <div class="legend-item">
-                <div class="line-sample" style="background-color: green;"></div>
-                <span>Day 3 Route</span>
+                <div class="line-sample" style="background-color: #dd2525; height: 4px;"></div>
+                <span>Route</span>
             </div>
             <div class="legend-item">
                 <div class="stop-label-sample">Stop 1: 9:00</div>
@@ -1322,10 +1519,8 @@ function addMapLegend(map) {
 }
 
 function addItineraryMarkersToMap(map, destination) {
-    // Get all itinerary stops grouped by day
     const dayContainers = document.querySelectorAll('.day-container');
     if (!dayContainers.length) {
-        // If no days, focus on destination
         focusMapOnDestination(map, destination);
         return;
     }
@@ -1382,7 +1577,7 @@ function addItineraryMarkersToMap(map, destination) {
                 .then(data => {
                     if (data.features && data.features.length > 0) {
                         const feature = data.features[0];
-                        const [longitude, latitude] = feature.geometry.coordinates;
+                        const [lon, lat] = feature.geometry.coordinates;
                         
                         // Create stop object
                         const stopObj = {
@@ -1391,14 +1586,14 @@ function addItineraryMarkersToMap(map, destination) {
                             name: stopName,
                             location,
                             time: stopTime,
-                            coordinates: [latitude, longitude]
+                            coordinates: [lat, lon]
                         };
                         
                         // Add to day stops
                         dayStops.push(stopObj);
                         
                         // Add marker for this stop with time information
-                        const marker = L.marker([latitude, longitude]).addTo(map);
+                        const marker = L.marker([lat, lon]).addTo(map);
                         const popupContent = stopTime 
                             ? `<b>Day ${dayNum}: ${stopName}</b><br>${location}<br><i>Time: ${stopTime}</i>` 
                             : `<b>Day ${dayNum}: ${stopName}</b><br>${location}`;
@@ -1406,10 +1601,23 @@ function addItineraryMarkersToMap(map, destination) {
                         
                         // Focus map on the first stop we process (earliest by day/time)
                         if (!firstStopProcessed) {
-                            map.setView([latitude, longitude], 10);
+                            map.setView([lat, lon], 10);
                             marker.openPopup();
                             firstStopProcessed = true;
                         }
+                        
+                        // Add stop order/time label
+                        const stopIndex = Array.from(stopItems).indexOf(stop);
+                        let labelText = `Stop ${stopIndex + 1}`;
+                        if (stopTime) labelText += `: ${stopTime}`;
+                        L.marker([lat, lon], {
+                            icon: L.divIcon({
+                                className: 'stop-label',
+                                html: `<div class="stop-label-content">${labelText}</div>`,
+                                iconSize: [80, 20],
+                                iconAnchor: [40, 20]
+                            })
+                        }).addTo(map);
                         
                         return stopObj;
                     }
@@ -1431,14 +1639,9 @@ function addItineraryMarkersToMap(map, destination) {
                     .filter(s => s.dayNum === dayNum)
                     .sort((a, b) => a.index - b.index);
                 
-                if (validStops.length >= 2) {
-                    // If we have at least 2 stops, create a route for this day
-                    drawRouteBetweenStops(map, validStops);
-                }
-                
-                // If no stops were successfully processed, fall back to the destination
-                if (!firstStopProcessed && results.every(r => r === null)) {
-                    focusMapOnDestination(map, destination);
+                if (validStops.length > 0) {
+                    map.fitBounds(bounds, { padding: [50, 50] });
+                    console.log('toggleDay: fitBounds to stops');
                 }
             });
     });
@@ -1515,13 +1718,13 @@ function focusMapOnDestination(map, destination) {
         .then(data => {
             if (data.features && data.features.length > 0) {
                 const location = data.features[0];
-                const [longitude, latitude] = location.geometry.coordinates;
+                const [lon, lat] = location.geometry.coordinates;
                 
                 // Center map on destination
-                map.setView([latitude, longitude], 10);
+                map.setView([lat, lon], 10);
                 
                 // Add marker for destination
-                const marker = L.marker([latitude, longitude]).addTo(map);
+                const marker = L.marker([lat, lon]).addTo(map);
                 marker.bindPopup(`<b>${destination}</b>`).openPopup();
             } else {
                 console.warn('Could not geocode destination:', destination);
