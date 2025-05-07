@@ -17,7 +17,6 @@
 	        <ul class="header-nav">
 	            <li><a href="/welcome">Home</a></li>
 	            <li><a href="/about">About</a></li>
-	            <li><a href="/join">Join Us!</a></li>
 	        </ul>
 	    </nav>
 	</header>
@@ -25,6 +24,9 @@
 
 	<div class="container">
 		<h1> Create your account</h1>
+		<div th:if="${error}" class="error-message">
+			<p th:text="${error}" style="color: red;"></p>
+		</div>
 		<form th:action="@{/user/validate}" th:object="${user}" method="post" onsubmit="return validatePassword()">
 				<label>First Name: </label><br>
 				<input type="text" name="firstName" th:field="*{firstName}"><br>
