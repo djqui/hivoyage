@@ -1,0 +1,344 @@
+@import url('https://fonts.googleapis.com/css2?family=Liter&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&display=swap');
+
+:root {
+    --mainclr: #fffef1;
+    --secclr: #dd2525;
+    --mainfont: "Liter", sans-serif;
+    --border: #E5E5E5;
+}
+
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--mainclr);
+    margin: 0;
+    font-family: var(--mainfont) !important;
+    color: var(--secclr);
+    line-height: 1.5;
+}
+
+/* Main content */
+main {
+    padding-top: 150px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-left: 20px;
+    padding-right: 20px;
+    margin-bottom: 100px;
+}
+
+.summary-container h1 {
+    font-size: 32px;
+    margin: 0px;
+    padding-bottom: 8px;
+}
+
+.summary-container p {
+    margin: 0px;
+    padding-bottom: 10px;
+}
+
+/* Map section */
+.map-section {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    height: 400px;
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+#summary-map {
+    height: 100%;
+    width: 100%;
+    border-radius: 8px;
+}
+
+/* Analytics cards - match trip card style */
+.analytics-cards {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 1.5rem;
+    margin: 2rem auto;
+    flex-wrap: nowrap;
+    width: 100%;
+    max-width: 900px;
+}
+
+.card {
+    background: var(--mainclr);
+    border: 2px solid var(--secclr);
+    border-radius: 12px;
+    box-shadow: none;
+    width: 200px;
+    min-width: 180px;
+    height: 140px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--secclr);
+    font-family: var(--mainfont);
+    padding: 1rem;
+    flex: 1;
+}
+
+.card:hover {
+    transform: scale(1.02);
+    border-color: #b71c1c;
+}
+
+.card-icon {
+    font-size: 1.5rem;
+    color: var(--secclr);
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.card-content h3 {
+    color: var(--secclr);
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    font-family: var(--mainfont);
+}
+
+.card-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--secclr);
+    margin-top: 0.25rem;
+    padding: 0%;
+    font-family: var(--mainfont);
+}
+
+/* Keep cards horizontal on all screen sizes */
+@media (max-width: 900px) {
+    .analytics-cards {
+        padding: 0 1rem;
+        gap: 1rem;
+    }
+    .card {
+        width: 160px;
+        min-width: 160px;
+        padding: 0.75rem;
+    }
+}
+
+@media (max-width: 600px) {
+    .analytics-cards {
+        gap: 0.75rem;
+    }
+    .card {
+        width: 140px;
+        min-width: 140px;
+        height: 120px;
+    }
+    .card-icon {
+        font-size: 1.25rem;
+    }
+    .card-content h3 {
+        font-size: 0.9rem;
+    }
+    .card-value {
+        font-size: 1.5rem;
+    }
+}
+
+/* Loading state */
+.loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 255, 255, 0.9);
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+}
+
+.loading i {
+    margin-right: 0.5rem;
+    color: var(--secclr);
+}
+
+/* No markers message */
+.no-markers-message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 255, 255, 0.9);
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    color: var(--secclr);
+    z-index: 1000;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .analytics-cards {
+        grid-template-columns: 1fr;
+    }
+    
+    .map-section {
+        height: 300px;
+    }
+    
+    main {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+}
+
+/* Map popup customization */
+.leaflet-popup-content-wrapper {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.leaflet-popup-content {
+    color: var(--secclr);
+    font-family: var(--mainfont);
+    margin: 0.5rem 1rem;
+}
+
+.leaflet-popup-tip {
+    background: white;
+}
+
+/* Marker cluster customization */
+.marker-cluster {
+    background-color: rgba(221, 37, 37, 0.6) !important;
+}
+
+.marker-cluster div {
+    background-color: var(--secclr) !important;
+    color: white !important;
+    font-family: var(--mainfont) !important;
+}
+
+/* Head styles */
+.trip-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    align-content: center;
+    margin-bottom: 2rem;
+}
+
+.trip-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.delete-trip-btn {
+    background-color: var(--mainclr);
+    color: var(--secclr);
+    border: 2px solid var(--secclr);
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 13px;
+}
+
+.delete-trip-btn:hover {
+    background-color: var(--secclr);
+    color: var(--mainclr);
+}
+
+.delete-trip-btn i {
+    font-size: 13px;
+}
+
+.delete-trip-btn:hover {
+    background-color: var(--secclr);
+    color: var(--mainclr);
+}
+
+.delete-trip-btn i {
+    font-size: 1rem;
+}
+
+/* Container for sections */
+.sections-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+@media (min-width: 1024px) {
+    .sections-container {
+        flex-direction: row;
+        align-items: flex-start;
+    }
+
+    .itinerary-section {
+        flex: 2;
+        margin-top: 0;
+    }
+
+    .right-column {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .packing-section {
+        margin-top: 0;
+    }
+}
+
+/* Responsive layout for smaller screens */
+@media (max-width: 1023px) {
+    .right-column {
+        display: flex;
+        flex-direction: row;
+        gap: 2rem;
+        flex-wrap: wrap;
+    }
+    
+    .calendar-section,
+    .packing-section {
+        flex: 1;
+        min-width: 280px;
+        margin-top: 0;
+    }
+}
+
+/* Smaller mobile screens */
+@media (max-width: 767px) {
+    .right-column {
+        flex-direction: column;
+    }
+}
+
+/* Trip info styles */
+main h1 {
+    margin-bottom: 10px;
+}
+
+main p {
+    margin: 5px 0;
+    padding-left: 20px;
+}
+
+main p i {
+    margin-right: 10px;
+}

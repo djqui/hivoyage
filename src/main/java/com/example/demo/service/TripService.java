@@ -20,6 +20,9 @@ public class TripService {
     @Autowired
     private TripRepository tripRepo;
     
+    @Autowired
+    private GeocodingService geocodingService;
+    
     // Check if there are any overlapping current trips for a specific user
     public boolean hasOverlappingCurrentTrip(Trip newTrip, User user) {
         if (newTrip.getStartDate() == null || newTrip.getEndDate() == null) {
@@ -68,6 +71,13 @@ public class TripService {
         if (hasOverlappingDates(trip, user)) {
             log.warn("Cannot save trip: Overlapping dates with existing trip for user: {}", user.getEmail());
             throw new IllegalStateException("Cannot have trips with overlapping dates");
+        }
+        
+        // Get coordinates for the destination
+        GeocodingService.Coordinates coords = geocodingService.getCoordinates(trip.getDestination());
+        if (coords != null) {
+            trip.setLatitude(coords.getLatitude());
+            trip.setLongitude(coords.getLongitude());
         }
         
         trip.setUser(user);
@@ -137,6 +147,25 @@ public class TripService {
             log.info("Successfully deleted trip with ID: {} for user: {}", id, user.getEmail());
         } else {
             log.warn("Cannot delete trip with ID: {} - not found or not owned by user: {}", id, user.getEmail());
+        }
+    }
+
+    // Update coordinates for all trips without coordinates
+    public void updateMissingCoordinates() {
+        log.info("Updating missing coordinates for all trips");
+        List<Trip> trips = tripRepo.findAll();
+        
+        for (Trip trip : trips) {
+            if (trip.getLatitude() == null || trip.getLongitude() == null) {
+                GeocodingService.Coordinates coords = geocodingService.getCoordinates(trip.getDestination());
+                if (coords != null) {
+                    trip.setLatitude(coords.getLatitude());
+                    trip.setLongitude(coords.getLongitude());
+                    tripRepo.save(trip);
+                    log.info("Updated coordinates for trip: {} to lat: {}, lon: {}", 
+                        trip.getDestination(), coords.getLatitude(), coords.getLongitude());
+                }
+            }
         }
     }
 }

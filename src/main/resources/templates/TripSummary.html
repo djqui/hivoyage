@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/styles/Header.css}">
+    <link rel="stylesheet" th:href="@{/styles/TripSummary.css}">
+    <script th:src="@{/scripts/Header.js}" defer></script>
+    <script th:src="@{/scripts/mapConfig.js}"></script>
+    <script th:src="@{/scripts/TripSummary.js}" defer></script>
+    <script th:src="@{/scripts/logout.js}" defer></script>
+    
+    <!-- Geoapify Map API -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+    
+    <!-- CSRF Tokens -->
+    <meta name="_csrf" th:if="${_csrf != null}" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:if="${_csrf != null}" th:content="${_csrf.headerName}"/>
+    
+    <title>Trip Summary</title>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <a href="/user/homepage">HiVoyage</a>
+        </div>
+        
+        <nav class="header-wrapper">
+            <ul class="header-nav">
+                <li><a href="/user/homepage">Dashboard</a></li>
+                <li><a href="/user/trip-summary">Trip Summary</a></li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-icon">
+                        <img th:if="${user != null && user.profilePicture != null}" th:src="@{'/uploads/profile-pictures/' + ${user.profilePicture}}" 
+                             alt="Profile Picture" class="profile-picture-small">
+                        <i th:unless="${user != null && user.profilePicture != null}" class="fas fa-user"></i>
+                    </a>
+                    <div class="dropdown-content">
+                        <p th:if="${user != null}"> Hello, <span th:text="${user != null ? user.username : 'Guest'}"></span>!</p>
+                        <a href="/user/profile">Profile</a>
+                        <a href="/logout">Logout</a>
+                    </div>
+                </li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <div class="summary-container">
+            <h1>World Map</h1>
+            <p> Recap of your travel journey with HiVoyage! </p>
+            
+            <!-- Map Section -->
+            <div class="map-section">
+                <div id="summary-map"></div>
+            </div>
+            
+            <!-- Analytics Cards -->
+            <div class="analytics-cards">
+                <div class="card">
+                    <div class="card-icon">
+                        <i class="fas fa-globe-americas"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>Countries Visited</h3>
+                        <p class="card-value" th:text="${countriesVisited}">0</p>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-icon">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>Total Trip Days</h3>
+                        <p class="card-value" th:text="${totalTripDays}">0</p>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-icon">
+                        <i class="fas fa-hourglass-half"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>Days Until Next Trip</h3>
+                        <p class="card-value" th:text="${daysUntilNextTrip}">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html> 
