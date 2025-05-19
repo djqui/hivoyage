@@ -185,10 +185,16 @@ public class TripController {
     }
     
     private boolean saveItineraryItem(Long id, int day, String title, String location, String description, User user) {
+        log.debug("Processing saveItineraryItem with day={}, title={}, location={}", day, title, location);
+        
         Trip trip = tripService.getTripByIdForUser(id, user);
         if (trip != null) {
+            // Validate that day is not negative
+            // Create a final copy of the day variable for use in lambda expressions
+            final int finalDay = day < 0 ? 0 : day;
+            
             ItineraryItem item = new ItineraryItem();
-            item.setDay(day);
+            item.setDay(finalDay);
             item.setTitle(title);
             item.setLocation(location);
             item.setDescription(description);
@@ -197,11 +203,43 @@ public class TripController {
             // Initialize itinerary list if null
             if (trip.getItinerary() == null) {
                 trip.setItinerary(new ArrayList<>());
+                log.debug("Initialized empty itinerary list for trip {}", id);
+            }
+            
+            // Remove any potential duplicates before adding the new item
+            // This serves as a safeguard in case the client-side delete operation fails
+            List<ItineraryItem> existingItems = trip.getItinerary();
+            
+            // Log current itinerary state
+            if (!existingItems.isEmpty()) {
+                log.debug("Current itinerary before adding new item - days present: {}", 
+                    existingItems.stream()
+                        .map(item1 -> item1.getDay())
+                        .distinct()
+                        .sorted()
+                        .collect(Collectors.toList()));
+            }
+            
+            List<ItineraryItem> itemsToRemove = existingItems.stream()
+                .filter(existingItem -> 
+                    existingItem.getDay() == finalDay &&
+                    existingItem.getTitle().equals(title) &&
+                    existingItem.getLocation().equals(location))
+                .collect(Collectors.toList());
+            
+            if (!itemsToRemove.isEmpty()) {
+                log.info("Found {} potential duplicate items to remove before adding new item", itemsToRemove.size());
+                trip.getItinerary().removeAll(itemsToRemove);
             }
             
             trip.getItinerary().add(item);
             tripService.saveWithoutDateCheck(trip, user);
-            log.info("Successfully saved itinerary item for trip {}", id);
+            
+            // Log updated itinerary state
+            log.debug("Updated itinerary for trip {} - now has {} items across {} days", 
+                id, trip.getItinerary().size(),
+                trip.getItinerary().stream().map(i -> i.getDay()).distinct().count());
+            
             return true;
         } else {
             log.error("Trip with ID {} not found", id);

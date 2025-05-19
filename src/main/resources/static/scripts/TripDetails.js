@@ -125,7 +125,10 @@ async function fetchWithCsrf(url, options = {}) {
 // itinerary functions
 function addItineraryDay() {
     const itinerary = document.getElementById("itinerary");
-    const dayNum = itinerary.children.length + 1;
+    // Get number of existing day containers instead of all children
+    const existingDayContainers = itinerary.querySelectorAll('.day-container');
+    const dayNum = existingDayContainers.length + 1;
+    
     const today = new Date();
     const date = new Date(today);
     date.setDate(date.getDate() + dayNum - 1);
@@ -159,6 +162,11 @@ function addItineraryDay() {
     `;
     itinerary.appendChild(dayDiv);
     updateItineraryProgress();
+    
+    // Update the UI to reflect changes in the calendar 
+    if (typeof updateCalendarWithItinerary === 'function') {
+        setTimeout(updateCalendarWithItinerary, 300);
+    }
 }
 
 let map;
@@ -984,7 +992,7 @@ function saveStop(button) {
     const saveNewItem = () => {
         // Log what we're sending
         console.log('Saving itinerary item:', {
-            day: dayNumber - 1,
+            day: dayNumber - 1, // Convert from 1-based UI to 0-based backend
             title: nameInput.value.trim(),
             location: addressInput.value.trim(),
             description: timeInput.value,
@@ -997,7 +1005,7 @@ function saveStop(button) {
         
         // Try URLSearchParams approach with proper encoding
         const params = new URLSearchParams();
-        params.append('day', dayNumber - 1);
+        params.append('day', dayNumber - 1); // Convert from 1-based UI to 0-based backend
         params.append('title', nameInput.value.trim());
         params.append('location', addressInput.value.trim());
         params.append('description', timeInput.value);
@@ -1084,26 +1092,52 @@ function saveStop(button) {
     // If editing an existing item, delete the original first
     if (deleteOriginal) {
         console.log('Deleting original item before saving updated version:', {
-            day: dayNumber - 1,
+            day: dayNumber - 1, // Convert from 1-based UI to 0-based backend
             title: originalTitle,
             location: originalLocation, 
             description: originalDescription
         });
         
-        const formData = new FormData();
-        formData.append('day', dayNumber - 1);
-        formData.append('title', originalTitle);
-        formData.append('location', originalLocation);
-        formData.append('description', originalDescription);
+        // Create a consistent format for delete operation
+        const deleteParams = new URLSearchParams();
+        deleteParams.append('day', dayNumber - 1); // Convert from 1-based UI to 0-based backend
+        deleteParams.append('title', originalTitle);
+        deleteParams.append('location', originalLocation);
+        deleteParams.append('description', originalDescription);
+        
+        // Get CSRF token
+        const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+        
+        // Use fetch with proper headers
+        const headers = {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        };
+        
+        // Add CSRF header if available
+        if (csrfToken && csrfHeader) {
+            headers[csrfHeader] = csrfToken;
+        }
         
         // Delete the original item first, then save the new one
-        fetchWithCsrf(`/user/trip/${tripId}/deleteItinerary`, {
+        fetch(`/user/trip/${tripId}/deleteItinerary`, {
             method: 'POST',
-            body: formData
+            headers: headers,
+            body: deleteParams.toString(),
+            credentials: 'same-origin'
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => {
+                    throw new Error(`Server error (${response.status}): ${text}`);
+                });
+            }
+            return response.text();
         })
         .then(() => {
             console.log('Original item deleted, saving new item');
-            saveNewItem();
+            // Wait a moment before saving to ensure the delete is fully processed
+            setTimeout(saveNewItem, 300);
         })
         .catch(error => {
             console.error('Error removing original item:', error);
@@ -1135,19 +1169,19 @@ function removeItem(button) {
     }
     
     console.log('Removing itinerary item:', {
-        day: dayNumber - 1,
+        day: dayNumber - 1, // Convert from 1-based UI to 0-based backend
         title: title,
         location: location,
         description: description,
         tripId: tripId
     });
     
-    // Create form data
-    const formData = new FormData();
-    formData.append('day', dayNumber - 1);
-    formData.append('title', title);
-    formData.append('location', location);
-    formData.append('description', description);
+    // Create form data using URLSearchParams for consistency
+    const deleteParams = new URLSearchParams();
+    deleteParams.append('day', dayNumber - 1); // Convert from 1-based UI to 0-based backend
+    deleteParams.append('title', title);
+    deleteParams.append('location', location);
+    deleteParams.append('description', description);
     
     // Get CSRF token
     const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
@@ -1158,10 +1192,22 @@ function removeItem(button) {
     const originalHTML = button.innerHTML;
     button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
     
-    // Send delete request with CSRF token
-    fetchWithCsrf(`/user/trip/${tripId}/deleteItinerary`, {
+    // Use fetch with proper headers
+    const headers = {
+        'Content-Type': 'application/x-www-form-urlencoded',
+    };
+    
+    // Add CSRF header if available
+    if (csrfToken && csrfHeader) {
+        headers[csrfHeader] = csrfToken;
+    }
+    
+    // Send delete request
+    fetch(`/user/trip/${tripId}/deleteItinerary`, {
         method: 'POST',
-        body: formData
+        headers: headers,
+        body: deleteParams.toString(),
+        credentials: 'same-origin'
     })
     .then(response => {
         if (!response.ok) {
@@ -1173,10 +1219,17 @@ function removeItem(button) {
     })
     .then(() => {
         console.log('Successfully removed item');
-        // Remove the stop item
-        stopItem.parentElement.remove();
+        // Remove the stop item from the DOM
+        const listItem = stopItem.closest('li');
+        if (listItem) {
+            listItem.remove();
+        } else {
+            stopItem.remove();
+        }
+        
         // Update progress
         updateItineraryProgress();
+        
         // Update calendar if it exists
         if (typeof updateCalendarWithItinerary === 'function') {
             updateCalendarWithItinerary();
@@ -1900,7 +1953,15 @@ function updateCalendarWithItinerary() {
 
 // Function to add a new stop with Google Places Autocomplete
 function addStop(button, day) {
-    const stopsList = button.closest('.day-content').querySelector(`.stops`);
+    const dayContent = button.closest('.day-content');
+    // Make sure we get the stops list within the correct day
+    const stopsList = dayContent.querySelector('.stops');
+    
+    if (!stopsList) {
+        console.error('Could not find stops list for day', day);
+        return;
+    }
+    
     const tripId = window.location.pathname.split('/').pop();
     
     // Create new stop item
