@@ -11,11 +11,8 @@
     <script th:src="@{/scripts/TripDetails.js}" defer></script>
     <script th:src="@{/scripts/logout.js}" defer></script>
     
-    <!-- Geoapify Map API -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@geoapify/geocoder-autocomplete@^1/dist/index.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@geoapify/geocoder-autocomplete@^1/styles/minimal.css">
+    <!-- Google Maps API -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCnA7J-Iz0f5A3cr8tRDrR-HcB8K-J9IAM&libraries=places,geometry"></script>
     
     <!-- CSRF Tokens -->
     <meta name="_csrf" th:if="${_csrf != null}" th:content="${_csrf.token}"/>
@@ -64,9 +61,34 @@
             <p><i class="fas fa-hourglass-half"></i><span th:text="${trip.countdown}">Countdown</span></p>
         </div>
         
-        <!-- Map Container -->
-        <div class="map-container">
-            <div id="trip-map"></div>
+        <!-- Container for Map and Route Planning -->
+        <div class="map-and-routes-container">
+             <!-- Map Container -->
+            <div class="map-container">
+                <div id="trip-map"></div>
+            </div>
+
+            <!-- Route Planning Section -->
+            <section class="route-planning-section">
+                <div class="route-planning-section-inner">
+                    <!-- Dropdowns and Button moved inside -->
+                    <div class="route-inputs">
+                        <select id="start-stop-select">
+                            <option value="">Choose Stop 1</option>
+                        </select>
+                        <div class="route-arrow">&#8595;</div> <!-- Down arrow -->
+                        <select id="end-stop-select">
+                            <option value="">Choose Stop 1</option>
+                        </select>
+                        <!-- Placeholder for stop names and times -->
+                        <div id="selected-stops-info"></div>
+                    </div>
+
+                    <h3>Mode of Transportation</h3>
+                    <div id="route-options-display"></div>
+                    <button id="get-route-options-btn" style="display: none;"><i class="fas fa-route"></i> Get Route Options</button>
+                </div>
+            </section>
         </div>
         
         <div class="sections-container">
