@@ -13,6 +13,9 @@ public class EmailService {
 
     @Value("${spring.mail.username}")
     private String fromEmail;
+    
+    @Value("${app.base-url}")
+    private String baseUrl;
 
     public EmailService(JavaMailSender mailSender) {
         this.mailSender = mailSender;
@@ -20,7 +23,7 @@ public class EmailService {
 
     // 🔹 Send Email Verification Link
     public void sendVerificationEmail(User user) {
-        String verifyUrl = "http://localhost:8080/user/verify?token=" + user.getVerificationToken();
+        String verifyUrl = baseUrl + "/user/verify?token=" + user.getVerificationToken();
 
         try {
             SimpleMailMessage message = new SimpleMailMessage();
@@ -47,7 +50,7 @@ public class EmailService {
 
     // 🔹 Send Password Reset Email
     public void sendResetPasswordEmail(String toEmail, String resetToken) {
-        String resetUrl = "http://localhost:8080/resetpassword?token=" + resetToken;
+        String resetUrl = baseUrl + "/resetpassword?token=" + resetToken;
         
         try {
             SimpleMailMessage message = new SimpleMailMessage();
