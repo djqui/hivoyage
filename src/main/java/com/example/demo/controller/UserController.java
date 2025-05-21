@@ -36,7 +36,7 @@ public class UserController {
         System.out.println("🔹 Received registration request for: " + user.getEmail());
 
         try {
-            if (user.getEmail() == null || user.getPassword() == null || user.getFirstName() == null || user.getLastName() == null) {
+            if (user.getEmail() == null || user.getPassword() == null || user.getFirstName() == null || user.getLastName() == null || user.getUsername() == null) {
                 System.out.println("❌ Registration failed: Missing required fields.");
                 model.addAttribute("error", "⚠️ All fields are required. Please fill them in.");
                 return "signup";

@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
 
 @Controller
 @Slf4j
@@ -183,10 +185,16 @@ public class TripController {
     }
     
     private boolean saveItineraryItem(Long id, int day, String title, String location, String description, User user) {
+        log.debug("Processing saveItineraryItem with day={}, title={}, location={}", day, title, location);
+        
         Trip trip = tripService.getTripByIdForUser(id, user);
         if (trip != null) {
+            // Validate that day is not negative
+            // Create a final copy of the day variable for use in lambda expressions
+            final int finalDay = day < 0 ? 0 : day;
+            
             ItineraryItem item = new ItineraryItem();
-            item.setDay(day);
+            item.setDay(finalDay);
             item.setTitle(title);
             item.setLocation(location);
             item.setDescription(description);
@@ -195,11 +203,43 @@ public class TripController {
             // Initialize itinerary list if null
             if (trip.getItinerary() == null) {
                 trip.setItinerary(new ArrayList<>());
+                log.debug("Initialized empty itinerary list for trip {}", id);
+            }
+            
+            // Remove any potential duplicates before adding the new item
+            // This serves as a safeguard in case the client-side delete operation fails
+            List<ItineraryItem> existingItems = trip.getItinerary();
+            
+            // Log current itinerary state
+            if (!existingItems.isEmpty()) {
+                log.debug("Current itinerary before adding new item - days present: {}", 
+                    existingItems.stream()
+                        .map(item1 -> item1.getDay())
+                        .distinct()
+                        .sorted()
+                        .collect(Collectors.toList()));
+            }
+            
+            List<ItineraryItem> itemsToRemove = existingItems.stream()
+                .filter(existingItem -> 
+                    existingItem.getDay() == finalDay &&
+                    existingItem.getTitle().equals(title) &&
+                    existingItem.getLocation().equals(location))
+                .collect(Collectors.toList());
+            
+            if (!itemsToRemove.isEmpty()) {
+                log.info("Found {} potential duplicate items to remove before adding new item", itemsToRemove.size());
+                trip.getItinerary().removeAll(itemsToRemove);
             }
             
             trip.getItinerary().add(item);
             tripService.saveWithoutDateCheck(trip, user);
-            log.info("Successfully saved itinerary item for trip {}", id);
+            
+            // Log updated itinerary state
+            log.debug("Updated itinerary for trip {} - now has {} items across {} days", 
+                id, trip.getItinerary().size(),
+                trip.getItinerary().stream().map(i -> i.getDay()).distinct().count());
+            
             return true;
         } else {
             log.error("Trip with ID {} not found", id);
@@ -421,5 +461,73 @@ public class TripController {
         tripService.deleteTripForUser(id, user);
         redirectAttributes.addFlashAttribute("message", "Trip deleted successfully!");
         return "redirect:/user/homepage";
+    }
+
+    @GetMapping("/user/trip-summary")
+    public String showTripSummary(@AuthenticationPrincipal CustomUserDetails userDetails, Model model) {
+        User user = userDetails.getUser();
+        List<Trip> trips = tripService.getAllTripsForUser(user);
+        
+        // Calculate statistics
+        long totalTripDays = trips.stream()
+            .filter(trip -> trip.getStartDate() != null && trip.getEndDate() != null)
+            .mapToLong(trip -> ChronoUnit.DAYS.between(trip.getStartDate(), trip.getEndDate()) + 1)
+            .sum();
+            
+        // Get unique countries visited
+        long countriesVisited = trips.stream()
+            .map(Trip::getDestination)
+            .distinct()
+            .count();
+            
+        // Find next trip
+        LocalDate today = LocalDate.now();
+        long daysUntilNextTrip = trips.stream()
+            .filter(trip -> trip.getStartDate() != null && trip.getStartDate().isAfter(today))
+            .mapToLong(trip -> ChronoUnit.DAYS.between(today, trip.getStartDate()))
+            .min()
+            .orElse(0);
+            
+        model.addAttribute("trips", trips);
+        model.addAttribute("totalTripDays", totalTripDays);
+        model.addAttribute("countriesVisited", countriesVisited);
+        model.addAttribute("daysUntilNextTrip", daysUntilNextTrip);
+        model.addAttribute("user", user);
+        
+        return "TripSummary";
+    }
+    
+    @GetMapping("/api/trips/summary")
+    @ResponseBody
+    public ResponseEntity<?> getTripSummaryData(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        User user = userDetails.getUser();
+        List<Trip> trips = tripService.getAllTripsForUser(user);
+        
+        List<Map<String, Object>> tripData = trips.stream()
+            .map(trip -> {
+                Map<String, Object> data = new HashMap<>();
+                data.put("destination", trip.getDestination());
+                data.put("startDate", trip.getStartDate());
+                data.put("endDate", trip.getEndDate());
+                data.put("latitude", trip.getLatitude());
+                data.put("longitude", trip.getLongitude());
+                return data;
+            })
+            .collect(Collectors.toList());
+            
+        return ResponseEntity.ok(tripData);
+    }
+
+    @GetMapping("/api/trips/update-coordinates")
+    @ResponseBody
+    public ResponseEntity<?> updateTripCoordinates(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        try {
+            tripService.updateMissingCoordinates();
+            return ResponseEntity.ok().body("Coordinates updated successfully");
+        } catch (Exception e) {
+            log.error("Error updating coordinates: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Error updating coordinates: " + e.getMessage());
+        }
     }
 }

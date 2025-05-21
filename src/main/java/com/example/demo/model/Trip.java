@@ -19,6 +19,9 @@ public class Trip {
     private LocalDate startDate;
     private LocalDate endDate;
 
+    private Double latitude;
+    private Double longitude;
+
     // Countdown is not stored in the database
     @Transient
     private String countdown;
@@ -54,6 +57,12 @@ public class Trip {
 
     public LocalDate getEndDate() { return endDate; }
     public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
+
+    public Double getLatitude() { return latitude; }
+    public void setLatitude(Double latitude) { this.latitude = latitude; }
+
+    public Double getLongitude() { return longitude; }
+    public void setLongitude(Double longitude) { this.longitude = longitude; }
 
     public String getCountdown() { return countdown; }
     public void setCountdown(String countdown) { this.countdown = countdown; }

@@ -440,10 +440,74 @@ button {
     margin-top: 1rem;
 }
 
+.packing-input-container {
+    display: flex;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1rem;
+}
+
+.packing-input-container input {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 1rem;
+    margin-right: 0.5rem;
+    font-family: var(--mainfont);
+    color: var(--secclr);
+}
+
+.packing-input-container input:focus {
+    outline: none;
+    border-color: var(--secclr);
+    box-shadow: 0 0 0 1px rgba(221, 37, 37, 0.2);
+}
+
+.packing-input-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.packing-input-container .save-btn,
+.packing-input-container .cancel-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+    background: none;
+}
+
+.packing-input-container .save-btn {
+    color: var(--secclr);
+}
+
+.packing-input-container .cancel-btn {
+    color: var(--secclr);
+}
+
+.packing-input-container .save-btn:hover {
+    transform: none;
+    background-color: transparent;
+}
+
+.packing-input-container .cancel-btn:hover {
+    transform: none;
+    background-color: transparent;
+}
+
 .packing-items {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
 }
 
 .packing-item {
@@ -451,47 +515,31 @@ button {
     justify-content: space-between;
     align-items: center;
     padding: 0.5rem;
+    border-bottom: 1px solid var(--border-light, #f0f0f0);
     color: var(--secclr);
 }
 
-.checkbox-container {
+.packing-item:last-child {
+    border-bottom: none;
+}
+
+.packing-item-content {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    cursor: pointer;
-    font-size: 1rem;
-    color: var(--secclr);
     flex: 1;
 }
 
-.checkbox-container input[type="checkbox"] {
-    display: inline-block;
+.packing-item-content input[type="checkbox"] {
     width: 16px;
     height: 16px;
     cursor: pointer;
     accent-color: var(--secclr);
-    border: 2px solid var(--secclr);
-    border-radius: 3px;
-    appearance: none;
-    -webkit-appearance: none;
-    background-color: white;
 }
 
-.checkbox-container input[type="checkbox"]:checked {
-    background-color: var(--secclr);
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath fill='none' stroke='white' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M6 10l3 3l6-6'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: 12px;
-}
-
-/* Remove the custom checkmark styles */
-.checkmark {
-    display: none;
-}
-
-.checkbox-container input[type="checkbox"]:checked + .checkmark:after {
-    display: none;
+.packing-item.checked .item-name {
+    text-decoration: line-through;
+    color: var(--border);
 }
 
 .item-name {
@@ -499,32 +547,24 @@ button {
     color: var(--secclr);
 }
 
-.item-actions {
+.packing-item-actions {
     display: flex;
     gap: 0.5rem;
     opacity: 0;
     transition: opacity 0.2s;
 }
 
-.packing-item:hover .item-actions {
+.packing-item:hover .packing-item-actions {
     opacity: 1;
 }
 
-.edit-btn, .delete-btn, .save-btn {
-    color: var(--secclr);
-    padding: 4px;
-    border-radius: 4px;
-    transition: background-color 0.2s;
+/* Remove the old checkmark styles */
+.checkbox-container {
+    display: none;
 }
 
-.edit-btn:hover, .delete-btn:hover, .save-btn:hover {
-    background-color: rgba(221, 37, 37, 0.1);
-}
-
-.packing-item {
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 0.5rem;
+.checkmark {
+    display: none;
 }
 
 #add-packing-item {
@@ -538,31 +578,39 @@ button {
     margin-top: 1rem;
     opacity: 0.8;
     transition: opacity 0.2s;
+    background: none;
+    cursor: pointer;
 }
 
 #add-packing-item:hover {
     background-color: rgba(221, 37, 37, 0.05);
+    opacity: 1;
 }
 
 /* Editing state for packing items */
-.packing-item.editing .item-name {
-    display: none;
+.packing-item.editing {
+    background-color: transparent;
+    padding: 0.5rem;
+    border-radius: 4px;
 }
 
-.packing-item.editing .edit-input {
-    display: block;
-    width: 100%;
-    padding: 0.5rem;
+.packing-item.editing .packing-item-content {
+    flex: 1;
+}
+
+.packing-item.editing input.edit-item-input {
+    flex: 1;
+    padding: 0.25rem 0.5rem;
     border: 1px solid var(--secclr);
     border-radius: 4px;
-    font-family: var(--mainfont);
     font-size: 1rem;
     color: var(--secclr);
-    margin-right: 1rem;
+    margin: 0;
     background: white;
+    font-family: var(--mainfont);
 }
 
-.packing-item.editing .item-actions {
+.packing-item.editing .packing-item-actions {
     opacity: 1;
 }
 
@@ -760,94 +808,482 @@ button {
     align-items: center;
 }
 
-/* Map section styles */
-.map-section {
-    margin-bottom: 2rem;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 1rem;
-    background-color: white;
-}
-
-.map-container {
-    width: 100%;
-    height: 400px;
-    margin-top: 1rem;
-    border-radius: 8px;
-    overflow: hidden;
-}
-
-#itinerary-map {
-    width: 100%;
-    height: 100%;
-}
-
-/* Map marker styles */
-.custom-marker-icon {
-    background: transparent;
-}
-
-.marker-number {
-    width: 30px;
-    height: 30px;
-    background-color: var(--secclr);
-    color: white;
+.edit-btn, .delete-btn, .save-btn {
+    background: none;
+    border: none;
+    color: var(--secclr);
+    cursor: pointer;
+    padding: 0;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: bold;
-    border: 2px solid white;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s ease;
 }
 
-/* Different colors for different days */
-.marker-number.day-1 { background-color: #E74C3C; }
-.marker-number.day-2 { background-color: #3498DB; }
-.marker-number.day-3 { background-color: #2ECC71; }
-.marker-number.day-4 { background-color: #F39C12; }
-.marker-number.day-5 { background-color: #9B59B6; }
-.marker-number.day-6 { background-color: #1ABC9C; }
-.marker-number.day-7 { background-color: #D35400; }
-/* Add more colors as needed for more days */
-
-/* Autocomplete container styles */
-.autocomplete-container {
-    width: 100%;
-    margin-bottom: 8px;
+.edit-btn {
+    color: var(--secclr);
 }
 
-.autocomplete-input {
-    width: 100%;
+.edit-btn:hover {
+    background-color: transparent;
+    transform: none;
 }
 
-.geoapify-autocomplete-input {
+.delete-btn {
+    color: var(--secclr);
+}
+
+.delete-btn:hover {
+    background-color: transparent;
+    transform: none;
+}
+
+.save-btn {
+    color: var(--secclr);
+}
+
+.save-btn:hover {
+    background-color: transparent;
+    transform: none;
+}
+
+/* Map Styles */
+.map-container {
+    margin: 2rem 0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--border);
+    background-color: #f5f5f5;
+}
+
+#trip-map {
     width: 100%;
+    height: 400px;
+    background-color: #f5f5f5;
+}
+
+/* Google Maps Info Window Styles */
+.gm-style .gm-style-iw-c {
+    padding: 12px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.gm-style .gm-style-iw-d {
+    overflow: hidden !important;
+}
+
+.gm-style .gm-style-iw-t::after {
+    background: linear-gradient(45deg, rgba(255, 255, 255, 1) 50%, rgba(255, 255, 255, 0) 51%, rgba(255, 255, 255, 0) 100%);
+    box-shadow: -2px 2px 2px 0 rgba(178, 178, 178, 0.4);
+}
+
+.gm-style .gm-style-iw {
+    padding: 0;
+}
+
+.gm-style .gm-style-iw-c {
+    padding: 0;
+}
+
+.gm-style .gm-style-iw-d {
+    padding: 0;
+}
+
+.gm-style .gm-style-iw-t::after {
+    background: linear-gradient(45deg, rgba(255, 255, 255, 1) 50%, rgba(255, 255, 255, 0) 51%, rgba(255, 255, 255, 0) 100%);
+    box-shadow: -2px 2px 2px 0 rgba(178, 178, 178, 0.4);
+}
+
+/* Marker Label Styles */
+.gm-style .gm-style-iw-c {
     font-family: var(--mainfont);
     color: var(--secclr);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    transition: border-color 0.2s ease;
 }
 
-.geoapify-autocomplete-input:focus {
+.gm-style .gm-style-iw-c strong {
+    color: var(--secclr);
+    font-weight: bold;
+}
+
+.gm-style .gm-style-iw-c i {
+    color: #666;
+    font-style: italic;
+}
+
+/* Directions Route Styles */
+.gm-style .gm-style-iw-c .gm-style-iw-d {
+    max-height: none !important;
+}
+
+.gm-style .gm-style-iw-c .gm-style-iw-d::-webkit-scrollbar {
+    width: 8px;
+}
+
+.gm-style .gm-style-iw-c .gm-style-iw-d::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.gm-style .gm-style-iw-c .gm-style-iw-d::-webkit-scrollbar-thumb {
+    background: var(--secclr);
+    border-radius: 4px;
+}
+
+.gm-style .gm-style-iw-c .gm-style-iw-d::-webkit-scrollbar-thumb:hover {
+    background: #b71c1c;
+}
+
+.route-day-label {
+    background-color: transparent;
+    border: none;
+}
+
+.day-label-content {
+    background-color: var(--secclr);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    white-space: nowrap;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.stop-label {
+    background-color: transparent;
+    border: none;
+    z-index: 600;
+}
+
+.stop-label-content {
+    background-color: white;
+    color: var(--secclr);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: bold;
+    white-space: nowrap;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--secclr);
+}
+
+/* Map Legend */
+.map-legend {
+    background-color: white;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
+    line-height: 1.5;
+    color: var(--secclr);
+}
+
+.map-legend h4 {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 5px;
+}
+
+.map-legend .legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+    font-size: 12px;
+}
+
+.map-legend .fas {
+    width: 20px;
+    text-align: center;
+    margin-right: 5px;
+}
+
+.map-legend .line-sample {
+    width: 20px;
+    height: 3px;
+    margin-right: 5px;
+}
+
+.map-legend .stop-label-sample {
+    background-color: white;
+    color: var(--secclr);
+    padding: 1px 5px;
+    border-radius: 8px;
+    font-size: 8px;
+    border: 1px solid var(--secclr);
+    margin-right: 5px;
+}
+
+/* Custom Google Maps InfoWindow Styles */
+.custom-gm-infowindow {
+    font-family: var(--mainfont);
+    color: var(--secclr);
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: #fff;
+    min-width: 140px;
+    max-width: 220px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+    font-size: 1rem;
+}
+.custom-gm-infowindow .infowindow-title {
+    font-weight: bold;
+    color: var(--secclr);
+    font-size: 1.08em;
+    margin-bottom: 2px;
+    line-height: 1.2;
+    word-break: break-word;
+}
+.custom-gm-infowindow .infowindow-address {
+    color: #444;
+    font-size: 0.98em;
+    margin-bottom: 2px;
+    word-break: break-word;
+}
+.custom-gm-infowindow .infowindow-time, .custom-gm-infowindow .infowindow-dates {
+    color: #888;
+    font-size: 0.95em;
+    font-style: italic;
+    margin-top: 2px;
+    word-break: break-word;
+}
+
+/* Container for Map and Route Planning */
+.map-and-routes-container {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin: 2rem 0;
+    justify-content: center;
+}
+
+@media (min-width: 768px) {
+    .map-and-routes-container {
+        flex-direction: row;
+        align-items: stretch;
+    }
+
+    .map-container {
+        flex: 2;
+        min-width: 300px;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .route-planning-section {
+        flex: 1;
+        min-width: 280px;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    #trip-map {
+        flex: 1;
+        height: 100%;
+        min-height: 400px;
+    }
+}
+
+@media (min-width: 1024px) {
+    .map-and-routes-container {
+        flex-direction: row;
+        align-items: stretch;
+    }
+
+    .map-container {
+        flex: 2;
+        min-width: auto;
+        margin: 0;
+    }
+
+    .route-planning-section {
+        flex: 1;
+        min-width: auto;
+        margin: 0;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+    }
+    
+    .route-planning-section-inner {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    #route-options-display {
+        flex: 1;
+        overflow-y: auto;
+    }
+}
+
+/* Route Planning Section Styles */
+.route-planning-section {
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    color: var(--secclr);
+    font-family: var(--mainfont);
+}
+
+.route-planning-section h2 {
+    font-size: 1.5rem;
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    color: var(--secclr);
+    text-align: center;
+}
+
+.route-planning-section h3 {
+     font-size: 1.2rem;
+     margin-top: 1.5rem;
+     margin-bottom: 1rem;
+     color: var(--secclr);
+     border-bottom: 1px solid var(--border);
+     padding-bottom: 0.5rem;
+}
+
+.route-inputs {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.route-inputs select {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid var(--secclr);
+    border-radius: 8px;
+    font-size: 1rem;
+    color: var(--secclr);
+    background-color: white;
+    cursor: pointer;
+    appearance: none;
+    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23dd2525%22%20d%3D%22M287%2C69.4a17.6%2C17.6%2C0%2C0%2C0%2C-13.6,-6.4H18.9c-5%2C0,-9.3,1.8,-12.9,5.4s-5.5,8,-5.5,13.1c0,5,1.7,9.4,5.2,13.1l127.1,128.3c3.5,3.5,7.8,5.3,13,5.3s9.5,-1.8,13,-5.3l127.1,-128.3C290.3,78.8,290.3,74.2,287,69.4Z%22%2F%3E%3C%2Fsvg%3E');
+    background-repeat: no-repeat;
+    background-position: right 15px top 50%;
+    background-size: 10px auto;
+}
+
+.route-inputs select:focus {
     outline: none;
+    border-color: var(--secclr);
+    box-shadow: 0 0 0 1px rgba(221, 37, 37, 0.2);
+}
+
+.route-inputs .route-arrow {
+    color: var(--secclr);
+    font-size: 1.5rem;
+    margin: -0.5rem 0;
+}
+
+#selected-stops-info {
+    font-size: 0.9rem;
+    color: #555;
+    text-align: center;
+    min-height: 1.2em;
+}
+
+#route-options-display {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+/* Style for route options */
+.route-option {
+    background-color: #fffef1;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.route-option:hover {
+    background-color: rgba(221, 37, 37, 0.05);
     border-color: var(--secclr);
 }
 
-.geoapify-autocomplete-items {
-    border: 1px solid var(--border);
-    border-radius: 0 0 6px 6px;
-    z-index: 100;
+.route-option.selected {
+    box-shadow: 0 0 0 1px var(--secclr);
+    background-color: rgba(221, 37, 37, 0.05);
+    border-color: var(--secclr);
 }
 
-.geoapify-autocomplete-item {
-    font-family: var(--mainfont);
+.route-option .mode-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 28px;
+}
+
+.route-option .mode-icon i {
+    font-size: 1.1rem;
     color: var(--secclr);
 }
 
-.geoapify-autocomplete-item:hover,
-.geoapify-autocomplete-item.active {
-    background-color: rgba(221, 37, 37, 0.1);
+.route-option .route-speed,
+.route-option .route-cost,
+.route-option .route-duration {
+    flex: 1;
+    text-align: center;
+    color: var(--secclr);
+    white-space: nowrap;
+    padding: 0 0.25rem;
+    font-size: 0.85rem;
+}
+
+.route-option .route-speed {
+    text-align: left;
+    margin-left: 0.5rem;
+}
+
+.route-option .route-duration {
+    text-align: right;
+}
+
+/* Style for the best route option */
+.route-option[data-best="true"] {
+    border-color: #28a745;
+    background-color: rgba(40, 167, 69, 0.1);
+}
+
+.route-option[data-best="true"] .mode-icon i,
+.route-option[data-best="true"] .route-speed,
+.route-option[data-best="true"] .route-cost,
+.route-option[data-best="true"] .route-duration {
+    color: #28a745;
+}
+
+.route-option[data-best="true"]::after {
+    content: 'BEST';
+    background-color: #28a745;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 0.5rem;
 }
 

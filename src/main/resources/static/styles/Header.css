@@ -55,12 +55,7 @@ header {
 }
 
 .header-nav a:hover {
-    color: black;
-}
-
-/* Dropdown styles */
-.dropdown {
-
+    font-weight: bold;
 }
 
 .dropdown-content {
@@ -100,13 +95,6 @@ header {
     background-color: var(--secclr);
     color: var(--mainclr);
 }
-
-/* Dropdown now only shows on click, not on hover */
-/*
-.dropdown:hover .dropdown-content {
-    display: block;
-}
-*/
 
 .dropdown-icon {
     display: flex;

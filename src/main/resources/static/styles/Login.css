@@ -70,6 +70,7 @@ h1 {
     color: var(--secclr);
     font-weight: bold;
     font-family: Liter, sans-serif;
+    margin-bottom: 8px;
 }
 
 div.container {
@@ -136,4 +137,5 @@ p {
     font-size: 14px;
     text-align: center;
     color: var(--secclr);
+    margin-top: 0;
 }

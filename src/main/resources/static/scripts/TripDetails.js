@@ -23,174 +23,52 @@ document.addEventListener('DOMContentLoaded', function() {
         link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css';
         document.head.appendChild(link);
     }
+    
+    // Add CSS for Google Places Autocomplete dropdown
+    const style = document.createElement('style');
+    style.textContent = `
+        .pac-container {
+            z-index: 10000 !important;
+            font-family: var(--font);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .pac-item {
+            padding: 8px;
+            cursor: pointer;
+        }
+        .pac-item:hover {
+            background-color: rgba(221, 37, 37, 0.05);
+        }
+        .pac-item-selected, .pac-item-selected:hover {
+            background-color: rgba(221, 37, 37, 0.1);
+        }
+        .pac-icon {
+            margin-right: 8px;
+        }
+        .pac-matched {
+            font-weight: bold;
+            color: var(--secclr);
+        }
+    `;
+    document.head.appendChild(style);
 
     // Initialize the itinerary progress
     updateItineraryProgress();
-    
-    // Initialize the map if the container exists
-    initMap();
+
+    // Initialize the map
+    initTripMap();
+
+    // Add event listeners to the stop select dropdowns
+    const startStopSelect = document.getElementById('start-stop-select');
+    const endStopSelect = document.getElementById('end-stop-select');
+
+    if (startStopSelect && endStopSelect) {
+        startStopSelect.addEventListener('change', handleStopSelectChange);
+        endStopSelect.addEventListener('change', handleStopSelectChange);
+    }
 });
-
-// Map-related variables
-let map;
-let markers = [];
-let markersByDay = {};
-let dayLayerGroups = {};
-
-// Function to initialize the map
-function initMap() {
-    const mapContainer = document.getElementById('itinerary-map');
-    if (!mapContainer) return;
-
-    // Initialize the map centered on a default location (will be updated later)
-    map = L.map('itinerary-map').setView([51.505, -0.09], 13);
-    
-    // Add the OpenStreetMap tiles
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(map);
-
-    // Add scale control
-    L.control.scale().addTo(map);
-
-    // Collect itinerary data and add markers
-    updateMapWithItinerary();
-}
-
-// Function to update the map with itinerary data
-function updateMapWithItinerary() {
-    if (!map) return;
-    
-    // Clear existing markers
-    clearMapMarkers();
-    
-    // Collect all stop items
-    const dayContainers = document.querySelectorAll('.day-container');
-    let allLocations = [];
-    
-    // Initialize layer groups for each day
-    dayLayerGroups = {};
-    
-    dayContainers.forEach(dayContainer => {
-        const dayNum = dayContainer.dataset.day;
-        const stops = dayContainer.querySelectorAll('.stop-item');
-        
-        // Create a layer group for this day
-        dayLayerGroups[dayNum] = L.layerGroup().addTo(map);
-        markersByDay[dayNum] = [];
-        
-        stops.forEach((stop, index) => {
-            const title = stop.querySelector('.stop-name').textContent;
-            const location = stop.querySelector('.stop-address').textContent;
-            const time = stop.querySelector('.stop-time').textContent;
-            const coordinatesEl = stop.querySelector('.stop-coordinates');
-            
-            if (coordinatesEl && coordinatesEl.textContent) {
-                // Use stored coordinates
-                const [lat, lon] = coordinatesEl.textContent.split(',').map(coord => parseFloat(coord.trim()));
-                if (!isNaN(lat) && !isNaN(lon)) {
-                    addMarkerToMap(lat, lon, title, location, time, dayNum, index + 1);
-                    allLocations.push({ lat, lon });
-                    return;
-                }
-            }
-            
-            // Fallback to geocoding if no coordinates are stored
-            geocodeLocation(location, title, time, dayNum, index + 1);
-            allLocations.push(location);
-        });
-    });
-    
-    // If we have at least one location with coordinates, try to fit the map
-    if (allLocations.length === 0) {
-        // No locations, set default view
-        map.setView([51.505, -0.09], 13);
-    } else if (markers.length > 0) {
-        // Fit to markers (this will happen after geocoding completes for locations without coordinates)
-        setTimeout(() => {
-            adjustMapBounds();
-        }, 500);
-    }
-}
-
-// Function to geocode a location string to coordinates
-function geocodeLocation(locationStr, title, time, dayNum, stopNum) {
-    // Use OpenStreetMap Nominatim API for geocoding
-    const encodedLocation = encodeURIComponent(locationStr);
-    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodedLocation}&limit=1`)
-        .then(response => response.json())
-        .then(data => {
-            if (data && data.length > 0) {
-                const lat = parseFloat(data[0].lat);
-                const lon = parseFloat(data[0].lon);
-                
-                // Add a marker to the map
-                addMarkerToMap(lat, lon, title, locationStr, time, dayNum, stopNum);
-                
-                // Try to fit map to show all markers
-                adjustMapBounds();
-            } else {
-                console.log(`Could not geocode: ${locationStr}`);
-            }
-        })
-        .catch(error => {
-            console.error('Error geocoding location:', error);
-        });
-}
-
-// Function to add a marker to the map
-function addMarkerToMap(lat, lon, title, location, time, dayNum, stopNum) {
-    // Create marker with custom icon
-    const markerIcon = L.divIcon({
-        className: 'custom-marker-icon',
-        html: `<div class="marker-number day-${dayNum}">${stopNum}</div>`,
-        iconSize: [30, 30],
-        iconAnchor: [15, 30]
-    });
-    
-    const marker = L.marker([lat, lon], { icon: markerIcon })
-        .bindPopup(`<b>${title}</b><br>${location}<br>Time: ${time}<br>Day ${dayNum}, Stop ${stopNum}`)
-        .addTo(dayLayerGroups[dayNum]);
-    
-    // Store the marker reference
-    markers.push(marker);
-    markersByDay[dayNum].push(marker);
-}
-
-// Function to adjust map bounds to show all markers
-function adjustMapBounds() {
-    if (markers.length > 0) {
-        const group = L.featureGroup(markers);
-        map.fitBounds(group.getBounds().pad(0.1)); // Add 10% padding
-    }
-}
-
-// Function to clear all markers from the map
-function clearMapMarkers() {
-    markers.forEach(marker => {
-        if (map.hasLayer(marker)) {
-            map.removeLayer(marker);
-        }
-    });
-    
-    // Clear layer groups
-    for (const dayNum in dayLayerGroups) {
-        if (map.hasLayer(dayLayerGroups[dayNum])) {
-            map.removeLayer(dayLayerGroups[dayNum]);
-        }
-    }
-    
-    markers = [];
-    markersByDay = {};
-    dayLayerGroups = {};
-}
-
-// Call this function after any changes to the itinerary
-function updateMapAfterItineraryChange() {
-    if (map) {
-        updateMapWithItinerary();
-    }
-}
 
 // Global CSRF token handling
 function addCsrfToken(options = {}) {
@@ -247,7 +125,10 @@ async function fetchWithCsrf(url, options = {}) {
 // itinerary functions
 function addItineraryDay() {
     const itinerary = document.getElementById("itinerary");
-    const dayNum = itinerary.children.length + 1;
+    // Get number of existing day containers instead of all children
+    const existingDayContainers = itinerary.querySelectorAll('.day-container');
+    const dayNum = existingDayContainers.length + 1;
+    
     const today = new Date();
     const date = new Date(today);
     date.setDate(date.getDate() + dayNum - 1);
@@ -282,147 +163,651 @@ function addItineraryDay() {
     itinerary.appendChild(dayDiv);
     updateItineraryProgress();
     
-    // Update map with the new day
-    updateMapAfterItineraryChange();
+    // Update the UI to reflect changes in the calendar 
+    if (typeof updateCalendarWithItinerary === 'function') {
+        setTimeout(updateCalendarWithItinerary, 300);
+    }
+}
+
+let map;
+let markers = [];
+let directionsService;
+let directionsRenderer;
+let activeRoute = null; // To store the currently displayed route details
+let currentDayStops = []; // To store the stop data for the currently toggled day
+
+function initTripMap() {
+    const mapElement = document.getElementById('trip-map');
+    if (!mapElement) return;
+    
+    // Initialize the map
+    map = new google.maps.Map(mapElement, {
+        center: MapConfig.defaultCenter,
+        zoom: MapConfig.defaultZoom,
+        styles: [
+            {
+                featureType: "poi",
+                elementType: "labels",
+                stylers: [{ visibility: "off" }]
+            }
+        ]
+    });
+    
+    // Initialize directions service and renderer
+    directionsService = new google.maps.DirectionsService();
+    directionsRenderer = new google.maps.DirectionsRenderer({
+        map: map,
+        suppressMarkers: true,
+        polylineOptions: {
+            strokeColor: '#dd2525',
+            strokeWeight: 4,
+            strokeOpacity: 0.7
+        }
+    });
+    
+    // Get destination from the page
+    const destination = document.querySelector('.trip-header h1').textContent.trim();
+    if (destination) {
+        focusMapOnDestination(destination);
+    }
+}
+
+function focusMapOnDestination(destination) {
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ address: destination }, (results, status) => {
+        if (status === 'OK' && results[0]) {
+            const location = results[0].geometry.location;
+            map.setCenter(location);
+            map.setZoom(10);
+            
+            // Add marker for destination
+            const marker = new google.maps.Marker({
+                position: location,
+                map: map,
+                title: destination
+            });
+            
+            // Add info window
+            const infoWindow = new google.maps.InfoWindow({
+                content: `<div class='custom-gm-infowindow'>
+                    <div class='infowindow-title'>${destination}</div>
+                    <div class='infowindow-address'>${location}</div>
+                </div>`
+            });
+            marker.addListener('click', () => {
+                infoWindow.open(map, marker);
+            });
+            infoWindow.open(map, marker);
+        } else {
+            console.warn('Could not geocode destination:', destination);
+        }
+    });
 }
 
 function toggleDay(header) {
     const dayContainer = header.closest('.day-container');
     const content = dayContainer.querySelector('.day-content');
     const chevron = header.querySelector('.fa-chevron-down');
+    const dayNumber = dayContainer.dataset.day;
     
     if (dayContainer.classList.contains('collapsed')) {
+        // Collapse all other days
+        document.querySelectorAll('.day-container').forEach(container => {
+            if (container !== dayContainer && !container.classList.contains('collapsed')) {
+                const otherContent = container.querySelector('.day-content');
+                const otherChevron = container.querySelector('.fa-chevron-down');
+                otherContent.style.display = 'none';
+                otherChevron.style.transform = 'rotate(-90deg)';
+                container.classList.add('collapsed');
+            }
+        });
+        
+        // Expand this day
         content.style.display = 'block';
         chevron.style.transform = 'rotate(0deg)';
         dayContainer.classList.remove('collapsed');
+        
+        // Populate stop dropdowns and focus map
+        populateStopDropdowns(content);
+        focusMapOnDay(content);
     } else {
         content.style.display = 'none';
         chevron.style.transform = 'rotate(-90deg)';
         dayContainer.classList.add('collapsed');
-    }
-}
-
-function addStop(button, dayNum) {
-    const stopsList = document.getElementById(`stops-day-${dayNum}`);
-    const stopCount = stopsList.children.length + 1;
-    const stopOrder = getStopOrder(stopCount);
-    
-    let stopItem = document.createElement("li");
-    stopItem.innerHTML = `
-        <div class="stop-item editing">
-            <div class="stop-order">${stopOrder}</div>
-            <div class="stop-details">
-                <input type="text" class="stop-name" placeholder="Stop name" required>
-                <div class="autocomplete-container">
-                    <div id="autocomplete-${dayNum}-${stopCount}" class="autocomplete-input"></div>
-                    <input type="text" class="stop-address-fallback" placeholder="Location (address)" style="width: 100%; margin-top: 8px; display: none;">
-                    <input type="hidden" class="stop-address" required>
-                    <input type="hidden" class="stop-coordinates" value="">
-                </div>
-                <input type="time" class="stop-time" required>
-            </div>
-            <div class="stop-actions">
-                <button class="edit-stop-btn" style="display: none" onclick="editStop(this)">
-                    <i class="fas fa-pen"></i>
-                </button>
-                <button class="save-stop-btn" onclick="saveStop(this)">
-                    <i class="fas fa-check"></i>
-                </button>
-                <button class="delete-btn" onclick="removeItem(this)">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-        </div>
-    `;
-    stopsList.appendChild(stopItem);
-    
-    // Initialize the autocomplete
-    const autocompleteId = `autocomplete-${dayNum}-${stopCount}`;
-    setTimeout(() => {
-        try {
-            initializeAutocomplete(autocompleteId, stopItem);
-        } catch (error) {
-            console.error("Error initializing autocomplete:", error);
-            showFallbackAddressInput(stopItem);
-        }
-    }, 100);
-    
-    // Focus the name input
-    stopItem.querySelector('.stop-name').focus();
-    updateItineraryProgress();
-}
-
-// Show fallback address input if autocomplete fails
-function showFallbackAddressInput(stopItem) {
-    const autocompleteContainer = stopItem.querySelector('.autocomplete-input');
-    const fallbackInput = stopItem.querySelector('.stop-address-fallback');
-    const addressInput = stopItem.querySelector('.stop-address');
-    
-    if (autocompleteContainer) {
-        autocompleteContainer.style.display = 'none';
-    }
-    
-    if (fallbackInput) {
-        fallbackInput.style.display = 'block';
         
-        // Update hidden address field when fallback input changes
-        fallbackInput.addEventListener('input', function() {
-            addressInput.value = fallbackInput.value;
+        // Clear dropdowns and show/focus on destination pin
+        clearStopDropdowns();
+        clearMap();
+        const destination = document.querySelector('.trip-header h1').textContent.trim();
+        focusMapOnDestination(destination);
+    }
+}
+
+// New function to focus map on stops of the expanded day
+function focusMapOnDay(dayContentElement) {
+    const stops = dayContentElement.querySelectorAll('.stop-item');
+    currentDayStops = []; // Clear previous day's stops
+            if (stops.length > 0) {
+        // Clear existing markers and route
+        clearMap();
+        
+        // Process stops
+        const bounds = new google.maps.LatLngBounds();
+        
+        stops.forEach((stop, index) => {
+                    const location = stop.querySelector('.stop-address').textContent;
+                                    const stopName = stop.querySelector('.stop-name').textContent;
+                                    const stopTime = stop.querySelector('.stop-time').textContent;
+            
+            // Store stop data
+            currentDayStops.push({
+                name: stopName,
+                address: location,
+                time: stopTime
+            });
+            
+            if (location) {
+                const geocoder = new google.maps.Geocoder();
+                geocoder.geocode({ address: location }, (results, status) => {
+                    if (status === 'OK' && results[0]) {
+                        const position = results[0].geometry.location;
+                        bounds.extend(position);
+                        
+                        // Add marker
+                        const marker = new google.maps.Marker({
+                            position: position,
+                            map: map,
+                            title: stopName
+                        });
+                        markers.push(marker);
+                        
+                        // Add info window
+                        const infoWindow = new google.maps.InfoWindow({
+                            content: `<div class='custom-gm-infowindow'>
+                                <div class='infowindow-title'>${stopName}</div>
+                                <div class='infowindow-address'>${location}</div>
+                                <div class='infowindow-time'>${stopTime ? 'Time: ' + stopTime : ''}</div>
+                            </div>`
+                        });
+                        marker.addListener('click', () => {
+                            infoWindow.open(map, marker);
+                        });
+                        
+                        // Add stop label
+                        const label = new google.maps.Marker({
+                            position: position,
+                            map: map,
+                            label: {
+                                text: `${index + 1}`,
+                                color: '#fff',
+                                fontSize: '14px',
+                                fontWeight: 'bold'
+                            },
+                            icon: {
+                                path: google.maps.SymbolPath.CIRCLE,
+                                scale: 15,
+                                fillColor: '#dd2525',
+                                fillOpacity: 1,
+                                strokeWeight: 0
+                            },
+                            zIndex: 500 // Ensure label is above the pin
+                        });
+                        markers.push(label);
+                        
+                        // If this is the last stop processed, fit bounds
+                        if (index === stops.length - 1) {
+                            map.fitBounds(bounds);
+                        }
+                    }
+                });
+            }
         });
     }
 }
 
-// Function to initialize Geoapify autocomplete
-function initializeAutocomplete(elementId, stopItem) {
-    const autocompleteElement = document.getElementById(elementId);
-    if (!autocompleteElement) return;
+function clearMap() {
+    // Clear markers
+    markers.forEach(marker => marker.setMap(null));
+    markers = [];
     
-    const addressInput = stopItem.querySelector('.stop-address');
-    const coordinatesInput = stopItem.querySelector('.stop-coordinates');
+    // Clear route
+    if (directionsRenderer) {
+        directionsRenderer.setDirections({ routes: [] });
+    }
+    activeRoute = null;
+    // Clear route options display
+    document.getElementById('route-options-display').innerHTML = '';
+    // Clear selected stops info
+    document.getElementById('selected-stops-info').innerHTML = '';
+}
+
+// New function to populate stop dropdowns
+function populateStopDropdowns(dayContentElement) {
+    const startStopSelect = document.getElementById('start-stop-select');
+    const endStopSelect = document.getElementById('end-stop-select');
+    const stops = dayContentElement.querySelectorAll('.stop-item');
     
-    // Check if Geoapify is loaded
-    if (typeof geoapify === 'undefined') {
-        console.error("Geoapify is not loaded. Showing fallback input.");
-        showFallbackAddressInput(stopItem);
+    // Clear previous options
+    startStopSelect.innerHTML = '<option value=\"\">Choose Stop 1</option>';
+    endStopSelect.innerHTML = '<option value=\"\">Choose Stop 2</option>'; // Updated text
+    
+    stops.forEach((stop, index) => {
+        const stopName = stop.querySelector('.stop-name').textContent;
+        const option = `<option value=\"${index}\">${stopName}</option>`;
+        startStopSelect.innerHTML += option;
+        endStopSelect.innerHTML += option;
+    });
+}
+
+// New function to clear stop dropdowns
+function clearStopDropdowns() {
+    const startStopSelect = document.getElementById('start-stop-select');
+    const endStopSelect = document.getElementById('end-stop-select');
+    startStopSelect.innerHTML = '<option value=\"\">Choose Stop 1</option>';
+    endStopSelect.innerHTML = '<option value=\"\">Choose Stop 2</option>'; // Updated text
+    document.getElementById('selected-stops-info').innerHTML = ''; // Clear selected stops info
+}
+
+// New function to handle dropdown changes and trigger route options fetch
+function handleStopSelectChange() {
+    const startStopSelect = document.getElementById('start-stop-select');
+    const endStopSelect = document.getElementById('end-stop-select');
+
+    if (startStopSelect.value !== '' && endStopSelect.value !== '') {
+        getRouteOptions();
+        displaySelectedStopsInfo(); // Display selected stop names and times
+    } else {
+         document.getElementById('route-options-display').innerHTML = ''; // Clear options if selection is incomplete
+         document.getElementById('selected-stops-info').innerHTML = ''; // Clear selected stops info
+    }
+}
+
+// New function to display selected stop names and times
+function displaySelectedStopsInfo() {
+    const startStopSelect = document.getElementById('start-stop-select');
+    const endStopSelect = document.getElementById('end-stop-select');
+    const selectedStopsInfoDiv = document.getElementById('selected-stops-info');
+
+    const startStopIndex = parseInt(startStopSelect.value);
+    const endStopIndex = parseInt(endStopSelect.value);
+
+    if (startStopIndex >= 0 && endStopIndex >= 0 && currentDayStops.length > 0) {
+        const startStop = currentDayStops[startStopIndex];
+        const endStop = currentDayStops[endStopIndex];
+
+        selectedStopsInfoDiv.innerHTML = `
+            ${startStop.name} &rarr; ${endStop.name}<br>
+            ${startStop.time ? startStop.time : 'N/A'} &rarr; ${endStop.time ? endStop.time : 'N/A'}
+        `;
+                    } else {
+        selectedStopsInfoDiv.innerHTML = '';
+    }
+}
+
+// New function to get route options between selected stops
+async function getRouteOptions() {
+    const startStopSelect = document.getElementById('start-stop-select');
+    const endStopSelect = document.getElementById('end-stop-select');
+    const routeOptionsDisplay = document.getElementById('route-options-display');
+    
+    const startStopIndex = startStopSelect.value;
+    const endStopIndex = endStopSelect.value;
+    
+    if (startStopIndex === '' || endStopIndex === '') {
+        alert('Please select both a start and an end stop.');
         return;
     }
     
-    // Initialize the Geoapify autocomplete
-    try {
-        const autocomplete = new geoapify.GeocoderAutocomplete(
-            autocompleteElement, 
-            '6f258eee01dc46bd82bb8f0866587b04', 
-            {
-                placeholder: 'Enter location',
-                debounceDelay: 300,
-                minLength: 3
+    if (startStopIndex === endStopIndex) {
+        alert('Start and end stops cannot be the same.');
+        return;
+    }
+    
+    // Get the stop elements from the currently expanded day
+    const expandedDayContent = document.querySelector('.day-container:not(.collapsed) .day-content');
+    if (!expandedDayContent) return; // Should not happen if dropdowns are populated
+    
+    const stops = expandedDayContent.querySelectorAll('.stop-item');
+    const startStop = stops[parseInt(startStopIndex)];
+    const endStop = stops[parseInt(endStopIndex)];
+    
+    const origin = startStop.querySelector('.stop-address').textContent;
+    const destination = endStop.querySelector('.stop-address').textContent;
+    
+    if (!origin || !destination) {
+        alert('Could not get addresses for selected stops.');
+        return;
+    }
+    
+    routeOptionsDisplay.innerHTML = 'Loading route options...';
+    
+    const travelModes = ['DRIVING', 'WALKING', 'BICYCLING', 'TRANSIT'];
+    const promises = travelModes.map(mode => getRoute(origin, destination, mode));
+    
+    const results = await Promise.all(promises);
+    
+    routeOptionsDisplay.innerHTML = ''; // Clear loading message
+    let optionsFound = false;
+    let foundRoutes = [];
+    
+    // First, collect all valid routes
+    results.forEach((result, index) => {
+        const mode = travelModes[index];
+        if (result && result.routes && result.routes.length > 0) {
+            const route = result.routes[0]; // Get the first route option
+            const leg = route.legs[0]; // Assuming a simple A to B route
+            
+            // Fix: Skip transit option if it's actually just a walking route
+            if (mode === 'TRANSIT' && leg.steps) {
+                // Check if all steps are WALKING mode
+                const onlyWalking = leg.steps.every(step => step.travel_mode === "WALKING");
+                if (onlyWalking) {
+                    console.log('Skipping transit option that is actually walking');
+                    return; // Skip this result
+                }
             }
+            
+            const duration = leg.duration.text;
+            const durationMinutes = Math.round(leg.duration.value / 60);
+            let formattedDuration = duration;
+            
+            // Format duration more consistently (1 hour 7 mins, 32 mins, etc.)
+            if (durationMinutes >= 60) {
+                const hours = Math.floor(durationMinutes / 60);
+                const mins = durationMinutes % 60;
+                formattedDuration = `${hours} hour${hours > 1 ? 's' : ''} ${mins} mins`;
+            } else {
+                formattedDuration = `${durationMinutes} mins`;
+            }
+            
+            const distance = leg.distance.text;
+            const speed = calculateSpeed(leg.distance.value, leg.duration.value); // Values are in meters and seconds
+            const cost = estimateCost(mode, leg.distance.value, leg.duration.value, route.fare); // Pass fare if available
+            
+            foundRoutes.push({
+                mode,
+                speed,
+                cost,
+                duration: formattedDuration,
+                durationValue: leg.duration.value, // For determining best route
+                result
+            });
+            
+            optionsFound = true;
+        }
+    });
+    
+    // Find the best route (shortest duration)
+    let bestRoute = null;
+    if (foundRoutes.length > 0) {
+        bestRoute = foundRoutes.reduce((prev, current) => 
+            prev.durationValue < current.durationValue ? prev : current
         );
-        
-        // Add event listener for selection
-        autocomplete.on('select', (location) => {
-            if (location) {
-                // Store the full address
-                addressInput.value = location.properties.formatted;
-                
-                // Store coordinates for mapping
-                const lat = location.properties.lat;
-                const lon = location.properties.lon;
-                coordinatesInput.value = `${lat},${lon}`;
-                
-                console.log('Selected location:', location.properties.formatted);
-                console.log('Coordinates:', lat, lon);
-            }
+    }
+    
+    // Now display the routes in order, with the best one on top
+    if (foundRoutes.length > 0) {
+        // First display the best route
+        foundRoutes.forEach((route, index) => {
+            const isBest = route.mode === bestRoute.mode;
+            
+            const optionHtml = `
+                <div class="route-option ${isBest ? 'selected' : ''}" data-mode="${route.mode}" ${isBest ? 'data-best="true"' : ''}>
+                    <span class="mode-icon">${getModeIcon(route.mode)}</span>
+                    <span class="route-speed">${route.speed} km/h</span>
+                    <span class="route-cost">${route.cost}</span>
+                    <span class="route-duration">${route.duration}</span>
+                    <button class="display-route-btn" data-mode="${route.mode}" style="display:none;">Show</button>
+                </div>
+            `;
+            
+            routeOptionsDisplay.innerHTML += optionHtml;
         });
         
-        // Show fallback if autocomplete fails to initialize properly
-        if (!autocompleteElement.querySelector('.geoapify-autocomplete-input')) {
-            throw new Error('Autocomplete did not initialize properly');
-        }
-    } catch (e) {
-        console.error('Error initializing Geoapify Autocomplete:', e);
-        showFallbackAddressInput(stopItem);
+        // Sort the options to ensure best route is first
+        const routeOptions = Array.from(routeOptionsDisplay.querySelectorAll('.route-option'));
+        routeOptions.sort((a, b) => {
+            if (a.hasAttribute('data-best')) return -1;
+            if (b.hasAttribute('data-best')) return 1;
+            return 0;
+        });
+        
+        // Clear container and add sorted elements
+        routeOptionsDisplay.innerHTML = '';
+        routeOptions.forEach(option => routeOptionsDisplay.appendChild(option));
+    } else {
+        routeOptionsDisplay.innerHTML = 'No route options found between the selected stops.';
     }
+    
+    // Add event listeners to the display route buttons
+    document.querySelectorAll('.display-route-btn').forEach(button => {
+        button.addEventListener('click', displayRouteOnMap);
+    });
+    
+    // Add event listeners to the route options for selection
+    document.querySelectorAll('.route-option').forEach(option => {
+        option.addEventListener('click', function() {
+            const button = this.querySelector('.display-route-btn');
+            if (button) button.click();
+        });
+    });
+}
+
+// New function to get a route for a specific mode
+function getRoute(origin, destination, travelMode) {
+    const request = {
+        origin: origin,
+        destination: destination,
+        travelMode: google.maps.TravelMode[travelMode]
+    };
+    
+    return new Promise((resolve, reject) => {
+        directionsService.route(request, (result, status) => {
+            if (status === 'OK') {
+                resolve(result);
+            } else {
+                console.warn(`Directions request for ${travelMode} failed: ${status}`);
+                resolve(null); // Resolve with null if route not found
+            }
+        });
+    });
+}
+
+// New function to calculate speed (in km/h)
+function calculateSpeed(distanceInMeters, durationInSeconds) {
+    if (durationInSeconds === 0) return 0;
+    const distanceInKm = distanceInMeters / 1000;
+    const durationInHours = durationInSeconds / 3600;
+    return (distanceInKm / durationInHours).toFixed(1);
+}
+
+// New function to estimate cost
+function estimateCost(travelMode, distanceInMeters, durationInSeconds, fare) {
+    // Always prioritize Google-provided fare information when available
+    if (fare) {
+        console.log(`Using Google-provided fare: ${fare.text}`);
+        return fare.text;
+    }
+    
+    // Fallback to our own estimates when Google doesn't provide fare info
+    console.log(`No Google fare data, using custom estimates for ${travelMode}`);
+    
+    // Simple default cost estimation
+    const distanceInKm = distanceInMeters / 1000;
+    
+    // Check if the location might be in the Philippines
+    const isPhilippines = checkIfPhilippines();
+    
+    switch (travelMode) {
+        case 'DRIVING':
+            if (isPhilippines) {
+                // Apply the taxi pricing model to driving instead
+                return `₱${(40 + distanceInKm * 13.50).toFixed(2)}`;
+            } else {
+                // Generic taxi estimate for other countries
+                return `$${(3 + distanceInKm * 1).toFixed(2)}`;
+            }
+        case 'BICYCLING':
+            return 'Free';
+        case 'TRANSIT':
+            return 'Varies';
+        case 'WALKING':
+            return 'Free';
+        default:
+            return 'Unknown';
+    }
+}
+
+// Helper function to check if current location is likely in the Philippines
+function checkIfPhilippines() {
+    // Try to detect Philippines from address elements on the page
+    const expandedDayContent = document.querySelector('.day-container:not(.collapsed) .day-content');
+    if (!expandedDayContent) return false;
+    
+    const addresses = Array.from(expandedDayContent.querySelectorAll('.stop-address'))
+        .map(el => el.textContent.toLowerCase());
+    
+    // Check for Philippines location indicators
+    const philippinesKeywords = ['philippines', 'manila', 'cebu', 'quezon', 'davao', 'ph,', 
+                                 'makati', 'pasig', 'taguig', 'pasay', 'baguio', 'iloilo'];
+    
+    // Return true if any address contains Philippines keywords
+    return addresses.some(address => 
+        philippinesKeywords.some(keyword => address.includes(keyword))
+    );
+}
+
+// New function to get mode icon (simple example)
+function getModeIcon(travelMode) {
+    switch (travelMode) {
+        case 'DRIVING': return '<i class="fas fa-taxi"></i>';
+        case 'BICYCLING': return '<i class="fas fa-biking"></i>';
+        case 'TRANSIT': return '<i class="fas fa-train"></i>';
+        case 'WALKING': return '<i class="fas fa-walking"></i>';
+        default: return '';
+    }
+}
+
+// New function to display a selected route on the map
+function displayRouteOnMap(event) {
+    const button = event.target.closest('.display-route-btn');
+    const mode = button.dataset.mode;
+    const routeOptionDiv = button.closest('.route-option');
+    
+    // Clear previous route
+    if (directionsRenderer) {
+        directionsRenderer.setDirections({ routes: [] });
+    }
+    activeRoute = null;
+    
+    // Set different polyline options based on the transport mode
+    let polylineOptions;
+    switch(mode) {
+        case 'WALKING':
+            polylineOptions = {
+                strokeColor: '#4CAF50', // Green for walking
+                strokeWeight: 4,
+                strokeOpacity: 0.7,
+                strokePattern: [
+                    { interval: "10px" } // Dashed line for walking
+                ]
+            };
+            break;
+        case 'BICYCLING':
+            polylineOptions = {
+                strokeColor: '#FF9800', // Orange for biking
+                strokeWeight: 4,
+                strokeOpacity: 0.7
+            };
+            break;
+        case 'TRANSIT':
+            polylineOptions = {
+                strokeColor: '#2196F3', // Blue for transit
+                strokeWeight: 5,
+                strokeOpacity: 0.8
+            };
+            break;
+        case 'DRIVING':
+        default:
+            polylineOptions = {
+                strokeColor: '#dd2525', // Default red
+                strokeWeight: 4,
+                strokeOpacity: 0.7
+            };
+    }
+    
+    // Update renderer with new polyline options
+    directionsRenderer.setOptions({
+        polylineOptions: polylineOptions,
+        suppressMarkers: true // Make sure markers are suppressed
+    });
+    
+    // Get origin and destination again (could store this from getRouteOptions)
+    const startStopSelect = document.getElementById('start-stop-select');
+    const endStopSelect = document.getElementById('end-stop-select');
+    const expandedDayContent = document.querySelector('.day-container:not(.collapsed) .day-content');
+    const stops = expandedDayContent.querySelectorAll('.stop-item');
+    const startStop = stops[parseInt(startStopSelect.value)];
+    const endStop = stops[parseInt(endStopSelect.value)];
+    const origin = startStop.querySelector('.stop-address').textContent;
+    const destination = endStop.querySelector('.stop-address').textContent;
+    
+    // Basic request object
+    const request = {
+        origin: origin,
+        destination: destination,
+        travelMode: google.maps.TravelMode[mode],
+        provideRouteAlternatives: false
+    };
+    
+    // Add transit-specific options if transit mode is selected
+    if (mode === 'TRANSIT') {
+        // Get current date and time
+        const now = new Date();
+        
+        request.transitOptions = {
+            departureTime: now,
+            modes: [
+                google.maps.TransitMode.BUS,
+                google.maps.TransitMode.RAIL,
+                google.maps.TransitMode.SUBWAY,
+                google.maps.TransitMode.TRAIN,
+                google.maps.TransitMode.TRAM
+            ],
+            routingPreference: google.maps.TransitRoutePreference.FEWER_TRANSFERS
+        };
+    }
+    
+    // Show loading state
+    routeOptionDiv.style.opacity = "0.7";
+    const loadingIndicator = document.createElement('span');
+    loadingIndicator.innerHTML = ' <i class="fas fa-spinner fa-spin"></i>';
+    loadingIndicator.classList.add('loading-indicator');
+    routeOptionDiv.appendChild(loadingIndicator);
+    
+    directionsService.route(request, (result, status) => {
+        // Remove loading indicator
+        routeOptionDiv.style.opacity = "1";
+        const indicator = routeOptionDiv.querySelector('.loading-indicator');
+        if (indicator) indicator.remove();
+        
+        if (status === 'OK') {
+            directionsRenderer.setDirections(result);
+            activeRoute = result; // Store the displayed route
+            
+            // Highlight the selected option
+            document.querySelectorAll('.route-option').forEach(opt => opt.classList.remove('selected'));
+            routeOptionDiv.classList.add('selected');
+        } else {
+            console.error(`Error displaying route for ${mode}: ${status}`);
+            
+            if (mode === 'TRANSIT' && status === 'ZERO_RESULTS') {
+                alert(`No transit routes available between these locations. Consider trying a different transportation mode.`);
+            } else {
+                alert(`Could not display route for ${mode}. Status: ${status}`);
+            }
+        }
+    });
 }
 
 function getStopOrder(num) {
@@ -434,9 +819,30 @@ function getStopOrder(num) {
     }
 }
 
+// Sort stops by time in a specific day container
 function sortStops(timeInput) {
     const stopsList = timeInput.closest('.stops');
-    const stopItems = Array.from(stopsList.querySelectorAll('.stop-item'));
+    sortStopsInContainer(stopsList);
+    // Update stop order numbers after sorting
+    updateStopOrderNumbers(stopsList);
+}
+
+// Sort all stops by time in all day containers
+function sortAllStops() {
+    const dayContainers = document.querySelectorAll('.day-container');
+    dayContainers.forEach(container => {
+        const stopsList = container.querySelector('.stops');
+        if (stopsList) {
+            sortStopsInContainer(stopsList);
+            // Update stop order numbers after sorting
+            updateStopOrderNumbers(stopsList);
+        }
+    });
+}
+
+// Helper function to sort stops within a container
+function sortStopsInContainer(stopsList) {
+    const stopItems = Array.from(stopsList.querySelectorAll('li'));
     
     stopItems.sort((a, b) => {
         // Check if the time element is an input or a span
@@ -456,7 +862,7 @@ function sortStops(timeInput) {
     
     // Clear and re-append sorted items
     stopItems.forEach(item => {
-        stopsList.appendChild(item.parentElement);
+        stopsList.appendChild(item);
     });
 }
 
@@ -465,7 +871,6 @@ function editStop(button) {
     const nameElement = stopItem.querySelector('.stop-name');
     const addressElement = stopItem.querySelector('.stop-address');
     const timeElement = stopItem.querySelector('.stop-time');
-    const coordinatesElement = stopItem.querySelector('.stop-coordinates');
     
     // Create input fields
     const nameInput = document.createElement('input');
@@ -474,40 +879,15 @@ function editStop(button) {
     nameInput.value = nameElement.textContent;
     nameInput.setAttribute('data-original', nameElement.textContent);
     
-    // Create autocomplete container
-    const autocompleteContainer = document.createElement('div');
-    autocompleteContainer.className = 'autocomplete-container';
-    
-    const autocompleteInput = document.createElement('div');
-    const autocompleteId = `autocomplete-edit-${Date.now()}`;
-    autocompleteInput.id = autocompleteId;
-    autocompleteInput.className = 'autocomplete-input';
-    
-    // Create fallback input
-    const fallbackInput = document.createElement('input');
-    fallbackInput.type = 'text';
-    fallbackInput.className = 'stop-address-fallback';
-    fallbackInput.placeholder = 'Location (address)';
-    fallbackInput.style.width = '100%';
-    fallbackInput.style.marginTop = '8px';
-    fallbackInput.style.display = 'none';
-    fallbackInput.value = addressElement.textContent;
-    
     const addressInput = document.createElement('input');
-    addressInput.type = 'hidden';
+    addressInput.type = 'text';
     addressInput.className = 'stop-address';
     addressInput.value = addressElement.textContent;
     addressInput.setAttribute('data-original', addressElement.textContent);
     
-    const coordinatesInput = document.createElement('input');
-    coordinatesInput.type = 'hidden';
-    coordinatesInput.className = 'stop-coordinates';
-    coordinatesInput.value = coordinatesElement ? coordinatesElement.textContent : '';
-    
-    autocompleteContainer.appendChild(autocompleteInput);
-    autocompleteContainer.appendChild(fallbackInput);
-    autocompleteContainer.appendChild(addressInput);
-    autocompleteContainer.appendChild(coordinatesInput);
+    // Generate a unique ID for the address input for autocomplete
+    const randomId = 'edit-address-' + Math.random().toString(36).substring(2, 10);
+    addressInput.id = randomId;
     
     const timeInput = document.createElement('input');
     timeInput.type = 'time';
@@ -517,7 +897,7 @@ function editStop(button) {
     
     // Replace elements with inputs
     nameElement.replaceWith(nameInput);
-    addressElement.replaceWith(autocompleteContainer);
+    addressElement.replaceWith(addressInput);
     timeElement.replaceWith(timeInput);
     
     // Show/hide buttons
@@ -527,86 +907,63 @@ function editStop(button) {
     // Add editing class
     stopItem.classList.add('editing');
     
-    // Focus the name input
-    nameInput.focus();
-    
-    // Initialize autocomplete with a slight delay to ensure the DOM is updated
+    // Initialize Google Places Autocomplete
     setTimeout(() => {
-        try {
-            initializeAutocompleteWithDefault(autocompleteId, stopItem, addressElement.textContent);
-        } catch (error) {
-            console.error("Error initializing autocomplete for edit:", error);
-            showFallbackAddressInput(stopItem);
-        }
-    }, 100);
-}
-
-// Function to initialize Geoapify autocomplete with a default value
-function initializeAutocompleteWithDefault(elementId, stopItem, defaultValue) {
-    const autocompleteElement = document.getElementById(elementId);
-    if (!autocompleteElement) return;
-    
-    const addressInput = stopItem.querySelector('.stop-address');
-    const coordinatesInput = stopItem.querySelector('.stop-coordinates');
-    
-    // Check if Geoapify is loaded
-    if (typeof geoapify === 'undefined') {
-        console.error("Geoapify is not loaded for edit. Showing fallback input.");
-        showFallbackAddressInput(stopItem);
-        return;
-    }
-    
-    // Initialize the Geoapify autocomplete
-    try {
-        const autocomplete = new geoapify.GeocoderAutocomplete(
-            autocompleteElement, 
-            '6f258eee01dc46bd82bb8f0866587b04',
-            {
-                placeholder: 'Enter location',
-                debounceDelay: 300,
-                minLength: 3,
-                value: defaultValue // Set default value
-            }
-        );
-        
-        // Add event listener for selection
-        autocomplete.on('select', (location) => {
-            if (location) {
-                // Store the full address
-                addressInput.value = location.properties.formatted;
-                
-                // Store coordinates for mapping
-                const lat = location.properties.lat;
-                const lon = location.properties.lon;
-                coordinatesInput.value = `${lat},${lon}`;
-                
-                console.log('Selected location:', location.properties.formatted);
-                console.log('Coordinates:', lat, lon);
-            }
+        const autocomplete = new google.maps.places.Autocomplete(addressInput, {
+            types: ['establishment', 'geocode']
         });
         
-        // Show fallback if autocomplete fails to initialize properly
-        if (!autocompleteElement.querySelector('.geoapify-autocomplete-input')) {
-            throw new Error('Autocomplete did not initialize properly for edit');
+        // Set bias to current map viewport for better results
+        if (map) {
+            autocomplete.bindTo('bounds', map);
         }
-    } catch (e) {
-        console.error('Error initializing Geoapify Autocomplete for edit:', e);
-        showFallbackAddressInput(stopItem);
-    }
+        
+        // When a place is selected from the dropdown
+        autocomplete.addListener('place_changed', function() {
+            const place = autocomplete.getPlace();
+            if (!place.geometry) {
+                console.log("No details available for this place");
+                return;
+            }
+            
+            // If there's a name but the stop name field is empty, fill it
+            if (place.name && nameInput && !nameInput.value.trim()) {
+                nameInput.value = place.name;
+            }
+            
+            // Set the address field value to formatted address
+            if (place.formatted_address) {
+                addressInput.value = place.formatted_address;
+            }
+            
+            // If the map is available, center it on the selected place
+            if (map && place.geometry.location) {
+                map.setCenter(place.geometry.location);
+                map.setZoom(15);
+                
+                // Add a temporary marker to show the selected place
+                const marker = new google.maps.Marker({
+                    position: place.geometry.location,
+                    map: map,
+                    animation: google.maps.Animation.DROP,
+                    title: place.name
+                });
+                
+                // Store in markers array so it can be cleared later
+                markers.push(marker);
+            }
+        });
+    }, 100);
+    
+    // Focus the name input
+    nameInput.focus();
 }
 
 function saveStop(button) {
     const stopItem = button.closest('.stop-item');
     const nameInput = stopItem.querySelector('.stop-name');
     const addressInput = stopItem.querySelector('.stop-address');
-    const fallbackInput = stopItem.querySelector('.stop-address-fallback');
-    const coordinatesInput = stopItem.querySelector('.stop-coordinates');
     const timeInput = stopItem.querySelector('.stop-time');
-    
-    // If address input is empty but fallback is visible and has value, use that
-    if (fallbackInput && fallbackInput.style.display !== 'none' && fallbackInput.value.trim()) {
-        addressInput.value = fallbackInput.value.trim();
-    }
     
     // Validate inputs
     if (!nameInput.value.trim() || !addressInput.value.trim() || !timeInput.value) {
@@ -635,11 +992,10 @@ function saveStop(button) {
     const saveNewItem = () => {
         // Log what we're sending
         console.log('Saving itinerary item:', {
-            day: dayNumber - 1,
+            day: dayNumber - 1, // Convert from 1-based UI to 0-based backend
             title: nameInput.value.trim(),
             location: addressInput.value.trim(),
             description: timeInput.value,
-            coordinates: coordinatesInput.value,
             tripId
         });
         
@@ -649,13 +1005,10 @@ function saveStop(button) {
         
         // Try URLSearchParams approach with proper encoding
         const params = new URLSearchParams();
-        params.append('day', dayNumber - 1);
+        params.append('day', dayNumber - 1); // Convert from 1-based UI to 0-based backend
         params.append('title', nameInput.value.trim());
         params.append('location', addressInput.value.trim());
         params.append('description', timeInput.value);
-        if (coordinatesInput.value) {
-            params.append('coordinates', coordinatesInput.value);
-        }
         
         // Use fetch with proper headers
         const headers = {
@@ -697,23 +1050,10 @@ function saveStop(button) {
             timeSpan.className = 'stop-time';
             timeSpan.textContent = timeInput.value;
             
-            // Create hidden span for coordinates
-            const coordinatesSpan = document.createElement('span');
-            coordinatesSpan.className = 'stop-coordinates';
-            coordinatesSpan.style.display = 'none';
-            coordinatesSpan.textContent = coordinatesInput.value;
-            
             // Replace inputs with spans
-            const autocompleteContainer = stopItem.querySelector('.autocomplete-container');
-            if (autocompleteContainer) {
-                autocompleteContainer.replaceWith(addressSpan);
-            } else {
-                addressInput.replaceWith(addressSpan);
-            }
-            
             nameInput.replaceWith(nameSpan);
+            addressInput.replaceWith(addressSpan);
             timeInput.replaceWith(timeSpan);
-            stopItem.appendChild(coordinatesSpan);
             
             // Update buttons
             button.innerHTML = '<i class="fas fa-check"></i>';
@@ -721,7 +1061,11 @@ function saveStop(button) {
             button.style.display = 'none';
             
             const editButton = stopItem.querySelector('.edit-stop-btn');
-            editButton.style.display = 'inline-flex';
+            if (editButton) { // Add check to ensure the edit button exists
+                editButton.style.display = 'inline-flex';
+            } else {
+                console.warn('Edit button not found in stop item');
+            }
             
             // Remove editing class
             stopItem.classList.remove('editing');
@@ -736,9 +1080,6 @@ function saveStop(button) {
             if (typeof updateCalendarWithItinerary === 'function') {
                 updateCalendarWithItinerary();
             }
-            
-            // Update map with new itinerary
-            updateMapAfterItineraryChange();
         })
         .catch(error => {
             console.error('Error saving itinerary item:', error);
@@ -751,26 +1092,52 @@ function saveStop(button) {
     // If editing an existing item, delete the original first
     if (deleteOriginal) {
         console.log('Deleting original item before saving updated version:', {
-            day: dayNumber - 1,
+            day: dayNumber - 1, // Convert from 1-based UI to 0-based backend
             title: originalTitle,
             location: originalLocation, 
             description: originalDescription
         });
         
-        const formData = new FormData();
-        formData.append('day', dayNumber - 1);
-        formData.append('title', originalTitle);
-        formData.append('location', originalLocation);
-        formData.append('description', originalDescription);
+        // Create a consistent format for delete operation
+        const deleteParams = new URLSearchParams();
+        deleteParams.append('day', dayNumber - 1); // Convert from 1-based UI to 0-based backend
+        deleteParams.append('title', originalTitle);
+        deleteParams.append('location', originalLocation);
+        deleteParams.append('description', originalDescription);
+        
+        // Get CSRF token
+        const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+        
+        // Use fetch with proper headers
+        const headers = {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        };
+        
+        // Add CSRF header if available
+        if (csrfToken && csrfHeader) {
+            headers[csrfHeader] = csrfToken;
+        }
         
         // Delete the original item first, then save the new one
-        fetchWithCsrf(`/user/trip/${tripId}/deleteItinerary`, {
+        fetch(`/user/trip/${tripId}/deleteItinerary`, {
             method: 'POST',
-            body: formData
+            headers: headers,
+            body: deleteParams.toString(),
+            credentials: 'same-origin'
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(text => {
+                    throw new Error(`Server error (${response.status}): ${text}`);
+                });
+            }
+            return response.text();
         })
         .then(() => {
             console.log('Original item deleted, saving new item');
-            saveNewItem();
+            // Wait a moment before saving to ensure the delete is fully processed
+            setTimeout(saveNewItem, 300);
         })
         .catch(error => {
             console.error('Error removing original item:', error);
@@ -802,19 +1169,19 @@ function removeItem(button) {
     }
     
     console.log('Removing itinerary item:', {
-        day: dayNumber - 1,
+        day: dayNumber - 1, // Convert from 1-based UI to 0-based backend
         title: title,
         location: location,
         description: description,
         tripId: tripId
     });
     
-    // Create form data
-    const formData = new FormData();
-    formData.append('day', dayNumber - 1);
-    formData.append('title', title);
-    formData.append('location', location);
-    formData.append('description', description);
+    // Create form data using URLSearchParams for consistency
+    const deleteParams = new URLSearchParams();
+    deleteParams.append('day', dayNumber - 1); // Convert from 1-based UI to 0-based backend
+    deleteParams.append('title', title);
+    deleteParams.append('location', location);
+    deleteParams.append('description', description);
     
     // Get CSRF token
     const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
@@ -825,10 +1192,22 @@ function removeItem(button) {
     const originalHTML = button.innerHTML;
     button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
     
-    // Send delete request with CSRF token
-    fetchWithCsrf(`/user/trip/${tripId}/deleteItinerary`, {
+    // Use fetch with proper headers
+    const headers = {
+        'Content-Type': 'application/x-www-form-urlencoded',
+    };
+    
+    // Add CSRF header if available
+    if (csrfToken && csrfHeader) {
+        headers[csrfHeader] = csrfToken;
+    }
+    
+    // Send delete request
+    fetch(`/user/trip/${tripId}/deleteItinerary`, {
         method: 'POST',
-        body: formData
+        headers: headers,
+        body: deleteParams.toString(),
+        credentials: 'same-origin'
     })
     .then(response => {
         if (!response.ok) {
@@ -840,17 +1219,21 @@ function removeItem(button) {
     })
     .then(() => {
         console.log('Successfully removed item');
-        // Remove the stop item
-        stopItem.parentElement.remove();
+        // Remove the stop item from the DOM
+        const listItem = stopItem.closest('li');
+        if (listItem) {
+            listItem.remove();
+        } else {
+            stopItem.remove();
+        }
+        
         // Update progress
         updateItineraryProgress();
+        
         // Update calendar if it exists
         if (typeof updateCalendarWithItinerary === 'function') {
             updateCalendarWithItinerary();
         }
-        
-        // Update map with updated itinerary
-        updateMapAfterItineraryChange();
     })
     .catch(error => {
         console.error('Error removing itinerary item:', error);
@@ -863,8 +1246,32 @@ function removeItem(button) {
 
 // packing list functions
 function addPackingItem() {
-    const packingList = document.getElementById("packing-list");
-    const nameInput = document.getElementById("packing-item-name");
+    // Show the input container
+    const inputContainer = document.getElementById('packing-input-container');
+    inputContainer.style.display = 'flex';
+    
+    // Focus on the input field
+    const nameInput = document.getElementById('packing-item-name');
+    nameInput.value = '';
+    nameInput.focus();
+    
+    // Hide the add button temporarily
+    const addButton = document.getElementById('add-packing-item');
+    addButton.style.display = 'none';
+}
+
+function cancelAddPackingItem() {
+    // Hide the input container
+    const inputContainer = document.getElementById('packing-input-container');
+    inputContainer.style.display = 'none';
+    
+    // Show the add button again
+    const addButton = document.getElementById('add-packing-item');
+    addButton.style.display = 'flex';
+}
+
+function saveNewPackingItem() {
+    const nameInput = document.getElementById('packing-item-name');
     
     // Validate input
     if (!nameInput.value.trim()) {
@@ -873,6 +1280,11 @@ function addPackingItem() {
     }
     
     const tripId = window.location.pathname.split('/').pop();
+    
+    // Show loading indicator
+    const saveBtn = document.querySelector('.packing-input-buttons .save-btn');
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
     
     // Send to backend using fetchWithCsrf helper
     fetchWithCsrf(`/user/trip/${tripId}/savePackingItem`, {
@@ -893,20 +1305,33 @@ function addPackingItem() {
                 <span class="item-name">${nameInput.value}</span>
             </div>
             <div class="packing-item-actions">
-                <button class="edit-btn" onclick="editPackingItem(this)">
-                    <i class="fas fa-edit"></i>
+                <button class="edit-btn" onclick="editPackingItem(this)" title="Edit">
+                    <i class="fas fa-pen"></i>
                 </button>
-                <button class="delete-btn" onclick="deletePackingItem(this)">
-                    <i class="fas fa-trash"></i>
+                <button class="delete-btn" onclick="deletePackingItem(this)" title="Delete">
+                    <i class="fas fa-times"></i>
                 </button>
             </div>
         `;
         
         // Add to list
+        const packingList = document.getElementById("packing-list");
         packingList.appendChild(item);
         
-        // Clear input
+        // Clear input and hide container
         nameInput.value = '';
+        
+        // Reset button
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="fas fa-check"></i>';
+        
+        // Hide the input container
+        const inputContainer = document.getElementById('packing-input-container');
+        inputContainer.style.display = 'none';
+        
+        // Show the add button again
+        const addButton = document.getElementById('add-packing-item');
+        addButton.style.display = 'flex';
         
         // Update progress
         updatePackingProgress();
@@ -914,6 +1339,10 @@ function addPackingItem() {
     .catch(error => {
         console.error('Error adding packing item:', error);
         alert('Failed to add packing item. Please try again.');
+        
+        // Reset button
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="fas fa-check"></i>';
     });
 }
 
@@ -935,11 +1364,15 @@ function editPackingItem(button) {
     // Add save button
     const saveBtn = document.createElement('button');
     saveBtn.className = 'save-btn';
+    saveBtn.setAttribute('title', 'Save');
     saveBtn.innerHTML = '<i class="fas fa-check"></i>';
     saveBtn.onclick = function() { savePackingItem(this, originalName); };
     
     const editBtn = packingItem.querySelector('.edit-btn');
     editBtn.replaceWith(saveBtn);
+    
+    // Add a class to indicate item is being edited
+    packingItem.classList.add('editing');
 }
 
 function savePackingItem(button, originalName) {
@@ -954,6 +1387,10 @@ function savePackingItem(button, originalName) {
     }
     
     const tripId = window.location.pathname.split('/').pop();
+    
+    // Show loading state
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
     
     // Send to backend using fetchWithCsrf helper
     fetchWithCsrf(`/user/trip/${tripId}/updatePackingItem`, {
@@ -974,15 +1411,22 @@ function savePackingItem(button, originalName) {
         // Replace save button with edit button
         const editBtn = document.createElement('button');
         editBtn.className = 'edit-btn';
-        editBtn.innerHTML = '<i class="fas fa-edit"></i>';
+        editBtn.setAttribute('title', 'Edit');
+        editBtn.innerHTML = '<i class="fas fa-pen"></i>';
         editBtn.onclick = function() { editPackingItem(this); };
         
         const saveBtn = packingItem.querySelector('.save-btn');
         saveBtn.replaceWith(editBtn);
+        
+        // Remove editing class
+        packingItem.classList.remove('editing');
     })
     .catch(error => {
         console.error('Error updating packing item:', error);
         alert('Failed to update packing item. Please try again.');
+        // Reset button
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-check"></i>';
     });
 }
 
@@ -991,7 +1435,15 @@ function deletePackingItem(button) {
     const nameElement = packingItem.querySelector('.item-name');
     const itemName = nameElement.textContent;
     
+    if (!confirm(`Are you sure you want to remove "${itemName}" from your packing list?`)) {
+        return;
+    }
+    
     const tripId = window.location.pathname.split('/').pop();
+    
+    // Show loading state
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
     
     // Send to backend using fetchWithCsrf helper
     fetchWithCsrf(`/user/trip/${tripId}/deletePackingItem`, {
@@ -1003,14 +1455,23 @@ function deletePackingItem(button) {
     })
     .then(response => response.text())
     .then(() => {
-        // Remove item
-        packingItem.remove();
-        // Update progress
-        updatePackingProgress();
+        // Remove item with fade-out effect
+        packingItem.style.opacity = '0';
+        packingItem.style.transition = 'opacity 0.3s';
+        
+        setTimeout(() => {
+            // Remove item after fade-out
+            packingItem.remove();
+            // Update progress
+            updatePackingProgress();
+        }, 300);
     })
     .catch(error => {
         console.error('Error deleting packing item:', error);
         alert('Failed to delete packing item. Please try again.');
+        // Reset button
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-times"></i>';
     });
 }
 
@@ -1050,8 +1511,8 @@ function updatePackingItemStatus(checkbox) {
 }
 
 function updatePackingProgress() {
-    const packingItems = document.querySelectorAll('.packing-item');
-    const checkedItems = document.querySelectorAll('.packing-item input[type="checkbox"]:checked');
+    const packingItems = document.querySelectorAll('#packing-list .packing-item');
+    const checkedItems = document.querySelectorAll('#packing-list .packing-item input[type="checkbox"]:checked');
     
     const progressEl = document.getElementById('packing-progress-text');
     
@@ -1175,8 +1636,12 @@ function deleteTrip() {
     });
 }
 
-// Initialize progress indicators
+// Initialize steps on page load
 document.addEventListener('DOMContentLoaded', function() {
+    // Sort all stops by time on page load
+    sortAllStops();
+    
+    // Initialize the progress indicators
     updatePackingProgress();
     updateItineraryProgress();
     
@@ -1186,7 +1651,7 @@ document.addEventListener('DOMContentLoaded', function() {
         packingInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                addPackingItem();
+                saveNewPackingItem();
             }
         });
     }
@@ -1486,10 +1951,108 @@ function updateCalendarWithItinerary() {
     renderCalendar(currentCalendarDate, tripStartDate, tripEndDate, itineraryItems);
 }
 
+// Function to add a new stop with Google Places Autocomplete
+function addStop(button, day) {
+    const dayContent = button.closest('.day-content');
+    // Make sure we get the stops list within the correct day
+    const stopsList = dayContent.querySelector('.stops');
+    
+    if (!stopsList) {
+        console.error('Could not find stops list for day', day);
+        return;
+    }
+    
+    const tripId = window.location.pathname.split('/').pop();
+    
+    // Create new stop item
+    const newStop = document.createElement('li');
+    const stopCount = stopsList.querySelectorAll('.stop-item').length + 1;
+    
+    newStop.innerHTML = `
+        <div class="stop-item editing">
+            <div class="stop-order">${getStopOrder(stopCount)}</div>
+            <div class="stop-details">
+                <input type="text" class="stop-name" placeholder="Stop Name" />
+                <input type="text" class="stop-address" id="stop-address-${day}-${stopCount}" placeholder="Address" />
+                <input type="time" class="stop-time" value="12:00" />
+            </div>
+            <div class="stop-actions">
+                <button class="save-stop-btn" onclick="saveStop(this)">
+                    <i class="fas fa-check"></i>
+                </button>
+                <button class="edit-stop-btn" style="display: none;" onclick="editStop(this)">
+                    <i class="fas fa-pen"></i>
+                </button>
+                <button class="delete-btn" onclick="removeItem(this)">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    
+    stopsList.appendChild(newStop);
+    
+    // Focus on the name input
+    const nameInput = newStop.querySelector('.stop-name');
+    nameInput.focus();
+    
+    // Initialize Google Places Autocomplete on the address input
+    setTimeout(() => {
+        const addressInput = document.getElementById(`stop-address-${day}-${stopCount}`);
+        if (addressInput) {
+            const autocomplete = new google.maps.places.Autocomplete(addressInput, {
+                types: ['establishment', 'geocode']
+            });
+            
+            // Set bias to current map viewport for better results
+            if (map) {
+                autocomplete.bindTo('bounds', map);
+            }
+            
+            // When a place is selected from the dropdown
+            autocomplete.addListener('place_changed', function() {
+                const place = autocomplete.getPlace();
+                if (!place.geometry) {
+                    console.log("No details available for this place");
+                    return;
+                }
+                
+                // If there's a name but the stop name field is empty, fill it
+                const nameField = addressInput.closest('.stop-details').querySelector('.stop-name');
+                if (place.name && nameField && !nameField.value.trim()) {
+                    nameField.value = place.name;
+                }
+                
+                // Set the address field value to formatted address
+                if (place.formatted_address) {
+                    addressInput.value = place.formatted_address;
+                }
+                
+                // If the map is available, center it on the selected place
+                if (map && place.geometry.location) {
+                    map.setCenter(place.geometry.location);
+                    map.setZoom(15);
+                    
+                    // Add a temporary marker to show the selected place
+                    const marker = new google.maps.Marker({
+                        position: place.geometry.location,
+                        map: map,
+                        animation: google.maps.Animation.DROP,
+                        title: place.name
+                    });
+                    
+                    // Store in markers array so it can be cleared later
+                    markers.push(marker);
+                }
+            });
+        }
+    }, 100); // Short delay to ensure DOM is ready
+}
+
 // Modify existing functions to update the calendar when itinerary changes
 const originalAddStop = addStop;
-addStop = function(element, day) {
-    originalAddStop(element, day);
+addStop = function(button, day) {
+    originalAddStop(button, day);
     // Update calendar after a short delay to allow for the DOM to update
     setTimeout(updateCalendarWithItinerary, 500);
 };
@@ -1504,4 +2067,180 @@ const originalSaveStop = saveStop;
 saveStop = function(element) {
     originalSaveStop(element);
     setTimeout(updateCalendarWithItinerary, 500);
-}; 
+};
+
+// Geoapify Map Integration
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize the map
+    initTripMap();
+    
+    // Rest of your existing DOMContentLoaded code
+    updatePackingProgress();
+    updateItineraryProgress();
+    
+    // Handle keyboard event for adding packing items
+    const packingInput = document.getElementById('packing-item-name');
+    if (packingInput) {
+        packingInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                saveNewPackingItem();
+            }
+        });
+    }
+});
+
+function initTripMap() {
+    const mapElement = document.getElementById('trip-map');
+    if (!mapElement) return;
+    
+    // Initialize the map
+    map = new google.maps.Map(mapElement, {
+        center: MapConfig.defaultCenter,
+        zoom: MapConfig.defaultZoom,
+        styles: [
+            {
+                featureType: "poi",
+                elementType: "labels",
+                stylers: [{ visibility: "off" }]
+            }
+        ]
+    });
+    
+    // Initialize directions service and renderer
+    directionsService = new google.maps.DirectionsService();
+    directionsRenderer = new google.maps.DirectionsRenderer({
+        map: map,
+        suppressMarkers: true,
+        polylineOptions: {
+            strokeColor: '#dd2525',
+            strokeWeight: 4,
+            strokeOpacity: 0.7
+        }
+    });
+    
+    // Get destination from the page
+    const destination = document.querySelector('.trip-header h1').textContent.trim();
+    if (destination) {
+        focusMapOnDestination(destination);
+    }
+}
+
+function focusMapOnDestination(destination) {
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ address: destination }, (results, status) => {
+        if (status === 'OK' && results[0]) {
+            const location = results[0].geometry.location;
+            map.setCenter(location);
+            map.setZoom(10);
+            
+            // Add marker for destination
+            const marker = new google.maps.Marker({
+                position: location,
+                map: map,
+                title: destination
+            });
+            
+            // Add info window
+            const infoWindow = new google.maps.InfoWindow({
+                content: `<div class='custom-gm-infowindow'>
+                    <div class='infowindow-title'>${destination}</div>
+                    <div class='infowindow-address'>${location}</div>
+                </div>`
+            });
+            marker.addListener('click', () => {
+                infoWindow.open(map, marker);
+            });
+            infoWindow.open(map, marker);
+        } else {
+            console.warn('Could not geocode destination:', destination);
+        }
+    });
+}
+
+function toggleDay(header) {
+    const dayContainer = header.closest('.day-container');
+    const content = dayContainer.querySelector('.day-content');
+    const chevron = header.querySelector('.fa-chevron-down');
+    const dayNumber = dayContainer.dataset.day;
+    
+    if (dayContainer.classList.contains('collapsed')) {
+        // Collapse all other days
+        document.querySelectorAll('.day-container').forEach(container => {
+            if (container !== dayContainer && !container.classList.contains('collapsed')) {
+                const otherContent = container.querySelector('.day-content');
+                const otherChevron = container.querySelector('.fa-chevron-down');
+                otherContent.style.display = 'none';
+                otherChevron.style.transform = 'rotate(-90deg)';
+                container.classList.add('collapsed');
+            }
+        });
+        
+        // Expand this day
+        content.style.display = 'block';
+        chevron.style.transform = 'rotate(0deg)';
+        dayContainer.classList.remove('collapsed');
+        
+        // Populate stop dropdowns and focus map
+        populateStopDropdowns(content);
+        focusMapOnDay(content);
+    } else {
+        content.style.display = 'none';
+        chevron.style.transform = 'rotate(-90deg)';
+        dayContainer.classList.add('collapsed');
+        
+        // Clear dropdowns and show/focus on destination pin
+        clearStopDropdowns();
+        clearMap();
+        const destination = document.querySelector('.trip-header h1').textContent.trim();
+        focusMapOnDestination(destination);
+    }
+}
+
+function calculateRoute(waypoints) {
+    if (waypoints.length < 2) return;
+    
+    const request = {
+        origin: waypoints[0].location,
+        destination: waypoints[waypoints.length - 1].location,
+        waypoints: waypoints.slice(1, -1),
+        travelMode: google.maps.TravelMode.DRIVING
+    };
+    
+    directionsService.route(request, (result, status) => {
+        if (status === 'OK') {
+            directionsRenderer.setDirections(result);
+            } else {
+            console.error('Directions request failed:', status);
+            }
+        });
+}
+
+// Update all stop order numbers based on their current sorted position
+function updateStopOrderNumbers(stopsList = null) {
+    if (stopsList) {
+        // Update numbers in a specific stops list
+        const stopItems = stopsList.querySelectorAll('.stop-item');
+        stopItems.forEach((item, index) => {
+            const orderElement = item.querySelector('.stop-order');
+            if (orderElement) {
+                orderElement.textContent = getStopOrder(index + 1);
+            }
+        });
+    } else {
+        // Update all stop numbers in all day containers
+        const dayContainers = document.querySelectorAll('.day-container');
+        dayContainers.forEach(container => {
+            const stopsList = container.querySelector('.stops');
+            if (stopsList) {
+                const stopItems = stopsList.querySelectorAll('.stop-item');
+                stopItems.forEach((item, index) => {
+                    const orderElement = item.querySelector('.stop-order');
+                    if (orderElement) {
+                        orderElement.textContent = getStopOrder(index + 1);
+                    }
+                });
+            }
+        });
+    }
+} 
