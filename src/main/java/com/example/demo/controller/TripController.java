@@ -45,7 +45,7 @@ public class TripController {
         if (userDetails != null) {
             model.addAttribute("user", userDetails.getUser());
         }
-        return "Newtrip";
+        return "newtrip";
     }
 
     // Save trip and redirect to homepage
@@ -132,7 +132,7 @@ public class TripController {
         model.addAttribute("daysUntilTrip", status);
         model.addAttribute("user", user);
     
-        return "TripDetails";
+        return "tripdetails";
     }
     
     @PostMapping("/user/trip/{id}/saveItinerary")
@@ -451,7 +451,7 @@ public class TripController {
         List<Trip> trips = tripService.getAllTripsForUser(user);
         model.addAttribute("trips", trips);
         model.addAttribute("user", user);
-        return "Lists";
+        return "lists";
     }
 
     @PostMapping("/user/trip/{id}/delete")
@@ -494,7 +494,7 @@ public class TripController {
         model.addAttribute("daysUntilNextTrip", daysUntilNextTrip);
         model.addAttribute("user", user);
         
-        return "TripSummary";
+        return "tripsummary";
     }
     
     @GetMapping("/api/trips/summary")
