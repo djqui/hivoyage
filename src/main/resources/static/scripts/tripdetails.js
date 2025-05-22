@@ -455,8 +455,8 @@ function populateStopDropdowns(dayContentElement) {
     const stops = dayContentElement.querySelectorAll('.stop-item');
     
     // Clear previous options
-    startStopSelect.innerHTML = '<option value=\"\">Choose Stop 1</option>';
-    endStopSelect.innerHTML = '<option value=\"\">Choose Stop 2</option>'; // Updated text
+    startStopSelect.innerHTML = '<option value=\"\">Current Location</option>';
+    endStopSelect.innerHTML = '<option value=\"\">Destination</option>'; // Updated text
     
     stops.forEach((stop, index) => {
         const stopName = stop.querySelector('.stop-name').textContent;
@@ -470,8 +470,8 @@ function populateStopDropdowns(dayContentElement) {
 function clearStopDropdowns() {
     const startStopSelect = document.getElementById('start-stop-select');
     const endStopSelect = document.getElementById('end-stop-select');
-    startStopSelect.innerHTML = '<option value=\"\">Choose Stop 1</option>';
-    endStopSelect.innerHTML = '<option value=\"\">Choose Stop 2</option>'; // Updated text
+    startStopSelect.innerHTML = '<option value=\"\">Current Location</option>';
+    endStopSelect.innerHTML = '<option value=\"\">Destination</option>'; // Updated text
     document.getElementById('selected-stops-info').innerHTML = ''; // Clear selected stops info
 }
 
