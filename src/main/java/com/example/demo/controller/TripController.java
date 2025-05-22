@@ -475,7 +475,7 @@ public class TripController {
             .sum();
             
         // Get unique countries visited
-        long countriesVisited = trips.stream()
+        long placesVisited = trips.stream()
             .map(Trip::getDestination)
             .distinct()
             .count();
@@ -490,7 +490,7 @@ public class TripController {
             
         model.addAttribute("trips", trips);
         model.addAttribute("totalTripDays", totalTripDays);
-        model.addAttribute("countriesVisited", countriesVisited);
+        model.addAttribute("placesVisited", placesVisited);
         model.addAttribute("daysUntilNextTrip", daysUntilNextTrip);
         model.addAttribute("user", user);
         
