@@ -122,17 +122,72 @@ async function fetchWithCsrf(url, options = {}) {
     }
 }
 
+// Function to calculate trip duration in days
+function getTripDuration() {
+    // Get trip dates from the page
+    const tripDateText = document.querySelector('.trip-header + p span').textContent;
+    const [startDateStr, endDateStr] = tripDateText.split(' - ');
+    
+    // Parse dates - they are in MM/DD format
+    const [startMonth, startDay] = startDateStr.split('/').map(Number);
+    const [endMonth, endDay] = endDateStr.split('/').map(Number);
+    
+    // Create date objects - get the actual current year
+    const currentDate = new Date();
+    let startYear = currentDate.getFullYear();
+    let endYear = currentDate.getFullYear();
+    
+    // Handle year transitions
+    if (endMonth < startMonth || (endMonth === startMonth && endDay < startDay)) {
+        endYear = startYear + 1;
+    }
+    
+    const startDate = new Date(startYear, startMonth - 1, startDay);
+    const endDate = new Date(endYear, endMonth - 1, endDay);
+    
+    // Calculate difference in days
+    const timeDiff = endDate.getTime() - startDate.getTime();
+    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1; // +1 because both start and end days are included
+    
+    return daysDiff;
+}
+
 // itinerary functions
-function addItineraryDay() {
+function addItineraryDay(isAutomated = false) {
     const itinerary = document.getElementById("itinerary");
     // Get number of existing day containers instead of all children
     const existingDayContainers = itinerary.querySelectorAll('.day-container');
     const dayNum = existingDayContainers.length + 1;
     
-    const today = new Date();
-    const date = new Date(today);
-    date.setDate(date.getDate() + dayNum - 1);
-    const formattedDate = date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+    // Check if we've reached the maximum number of days
+    const tripDuration = getTripDuration();
+    if (dayNum > tripDuration) {
+        if (!isAutomated) { // Only show alert for manual additions
+            alert(`You cannot add more than ${tripDuration} days to match your trip duration. Please adjust your trip dates if you need more days.`);
+        }
+        return;
+    }
+    
+    // Get trip start date for more accurate day dates
+    const tripDateText = document.querySelector('.trip-header + p span').textContent;
+    const startDateStr = tripDateText.split(' - ')[0];
+    const [startMonth, startDay] = startDateStr.split('/').map(Number);
+    
+    // Create date object based on trip start date
+    const currentDate = new Date();
+    let year = currentDate.getFullYear();
+    
+    // Handle year adjustment (if trip is in past or future)
+    const currentMonth = currentDate.getMonth() + 1;
+    if (startMonth < currentMonth) {
+        year++;  // Trip is likely next year
+    }
+    
+    const tripStartDate = new Date(year, startMonth - 1, startDay);
+    const dayDate = new Date(tripStartDate);
+    dayDate.setDate(tripStartDate.getDate() + dayNum - 1);
+    
+    const formattedDate = dayDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
 
     let dayDiv = document.createElement("div");
     dayDiv.className = "day-container";
@@ -175,6 +230,7 @@ let directionsService;
 let directionsRenderer;
 let activeRoute = null; // To store the currently displayed route details
 let currentDayStops = []; // To store the stop data for the currently toggled day
+let destinationMarker = null; // To track the destination marker for hiding/showing
 
 function initTripMap() {
     const mapElement = document.getElementById('trip-map');
@@ -220,8 +276,13 @@ function focusMapOnDestination(destination) {
             map.setCenter(location);
             map.setZoom(10);
             
+            // Clear any existing destination marker
+            if (destinationMarker) {
+                destinationMarker.setMap(null);
+            }
+            
             // Add marker for destination
-            const marker = new google.maps.Marker({
+            destinationMarker = new google.maps.Marker({
                 position: location,
                 map: map,
                 title: destination
@@ -234,10 +295,11 @@ function focusMapOnDestination(destination) {
                     <div class='infowindow-address'>${location}</div>
                 </div>`
             });
-            marker.addListener('click', () => {
-                infoWindow.open(map, marker);
+            destinationMarker.addListener('click', () => {
+                infoWindow.open(map, destinationMarker);
             });
-            infoWindow.open(map, marker);
+            // Remove the line that automatically opens the info window
+            // infoWindow.open(map, marker);
         } else {
             console.warn('Could not geocode destination:', destination);
         }
@@ -266,6 +328,11 @@ function toggleDay(header) {
         content.style.display = 'block';
         chevron.style.transform = 'rotate(0deg)';
         dayContainer.classList.remove('collapsed');
+        
+        // Hide destination marker when a day is expanded
+        if (destinationMarker) {
+            destinationMarker.setMap(null);
+        }
         
         // Populate stop dropdowns and focus map
         populateStopDropdowns(content);
@@ -941,6 +1008,10 @@ function editStop(button) {
                 map.setCenter(place.geometry.location);
                 map.setZoom(15);
                 
+                // Clear existing markers before adding a new one
+                markers.forEach(marker => marker.setMap(null));
+                markers = [];
+                
                 // Add a temporary marker to show the selected place
                 const marker = new google.maps.Marker({
                     position: place.geometry.location,
@@ -951,6 +1022,18 @@ function editStop(button) {
                 
                 // Store in markers array so it can be cleared later
                 markers.push(marker);
+                
+                // Add info window for the marker
+                const infoWindow = new google.maps.InfoWindow({
+                    content: `<div class='custom-gm-infowindow'>
+                        <div class='infowindow-title'>${place.name}</div>
+                        <div class='infowindow-address'>${place.formatted_address || ''}</div>
+                    </div>`
+                });
+                
+                marker.addListener('click', () => {
+                    infoWindow.open(map, marker);
+                });
             }
         });
     }, 100);
@@ -1079,6 +1162,14 @@ function saveStop(button) {
             // Update calendar if it exists
             if (typeof updateCalendarWithItinerary === 'function') {
                 updateCalendarWithItinerary();
+            }
+            
+            // Refresh the map view with the updated stop data
+            const dayContent = stopItem.closest('.day-content');
+            if (dayContent) {
+                // Repopulate stop dropdowns and refresh map
+                populateStopDropdowns(dayContent);
+                focusMapOnDay(dayContent);
             }
         })
         .catch(error => {
@@ -1655,6 +1746,16 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+    
+    // Auto-create days based on trip duration if no days exist yet
+    const existingDayContainers = document.querySelectorAll('.day-container');
+    if (existingDayContainers.length === 0) {
+        const tripDuration = getTripDuration();
+        // Only auto-create days if this is a new trip (no days yet)
+        for (let i = 0; i < tripDuration; i++) {
+            addItineraryDay(true); // Pass true to indicate automated creation
+        }
+    }
 });
 
 // Calendar functionality
@@ -2033,6 +2134,10 @@ function addStop(button, day) {
                     map.setCenter(place.geometry.location);
                     map.setZoom(15);
                     
+                    // Clear existing markers before adding a new one
+                    markers.forEach(marker => marker.setMap(null));
+                    markers = [];
+                    
                     // Add a temporary marker to show the selected place
                     const marker = new google.maps.Marker({
                         position: place.geometry.location,
@@ -2043,6 +2148,18 @@ function addStop(button, day) {
                     
                     // Store in markers array so it can be cleared later
                     markers.push(marker);
+                    
+                    // Add info window for the marker
+                    const infoWindow = new google.maps.InfoWindow({
+                        content: `<div class='custom-gm-infowindow'>
+                            <div class='infowindow-title'>${place.name}</div>
+                            <div class='infowindow-address'>${place.formatted_address || ''}</div>
+                        </div>`
+                    });
+                    
+                    marker.addListener('click', () => {
+                        infoWindow.open(map, marker);
+                    });
                 }
             });
         }
@@ -2061,6 +2178,15 @@ const originalRemoveItem = removeItem;
 removeItem = function(element) {
     originalRemoveItem(element);
     setTimeout(updateCalendarWithItinerary, 500);
+    
+    // Also refresh the map view after removing an item
+    setTimeout(() => {
+        const dayContent = element.closest('.day-content');
+        if (dayContent) {
+            populateStopDropdowns(dayContent);
+            focusMapOnDay(dayContent);
+        }
+    }, 500);
 };
 
 const originalSaveStop = saveStop;
@@ -2134,8 +2260,13 @@ function focusMapOnDestination(destination) {
             map.setCenter(location);
             map.setZoom(10);
             
+            // Clear any existing destination marker
+            if (destinationMarker) {
+                destinationMarker.setMap(null);
+            }
+            
             // Add marker for destination
-            const marker = new google.maps.Marker({
+            destinationMarker = new google.maps.Marker({
                 position: location,
                 map: map,
                 title: destination
@@ -2148,10 +2279,11 @@ function focusMapOnDestination(destination) {
                     <div class='infowindow-address'>${location}</div>
                 </div>`
             });
-            marker.addListener('click', () => {
-                infoWindow.open(map, marker);
+            destinationMarker.addListener('click', () => {
+                infoWindow.open(map, destinationMarker);
             });
-            infoWindow.open(map, marker);
+            // Remove the line that automatically opens the info window
+            // infoWindow.open(map, marker);
         } else {
             console.warn('Could not geocode destination:', destination);
         }
@@ -2180,6 +2312,11 @@ function toggleDay(header) {
         content.style.display = 'block';
         chevron.style.transform = 'rotate(0deg)';
         dayContainer.classList.remove('collapsed');
+        
+        // Hide destination marker when a day is expanded
+        if (destinationMarker) {
+            destinationMarker.setMap(null);
+        }
         
         // Populate stop dropdowns and focus map
         populateStopDropdowns(content);
