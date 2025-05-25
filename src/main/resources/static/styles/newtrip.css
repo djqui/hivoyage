@@ -43,54 +43,77 @@ body {
             font-weight: bold;
             margin-bottom: 8px;
         }
-        .form-group input {
+        .form-group input[type="text"],
+        .form-group input[type="date"] {
             width: 100%;
             padding: 12px;
-            border: 1px solid var(--secclr);
+            border: 1.5px solid var(--secclr);
             border-radius: 4px;
             background-color: var(--mainclr);
             color: var(--secclr);
             font-size: 14px;
             box-sizing: border-box;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
         }
+        .form-group input[type="text"]:focus,
+        .form-group input[type="date"]:focus {
+            outline: none;
+            border-color: var(--secclr);
+            background-color: #fff;
+            box-shadow: 0 0 0 3px rgba(221, 37, 37, 0.15);
+        }
+        .form-group input[type="text"]::placeholder,
+        .form-group input[type="date"]::placeholder {
+            color: var(--secclr);
+            opacity: 0.8;
+        }
+
+        /* Side-by-side date pickers */
         .form-group .input-group {
             display: flex;
-            gap: 8px;
+            gap: 16px;
         }
         .form-group .input-group .input-icon {
             display: flex;
             align-items: center;
-            border: 1px solid var(--secclr);
-            border-radius: 4px;
-            padding: 0 12px;
-            width: 100%;
-            height: 44px;
-            box-sizing: border-box;
-        }
-
-        .form-group .input-group .input-icon input {
             border: none;
-            outline: none;
+            border-radius: 4px;
+            padding: 0;
             width: 100%;
-            height: 100%;
-            padding: 12px 0;
+            height: auto;
             box-sizing: border-box;
         }
+        .form-group .input-group .input-icon input {
+            border: 1.5px solid var(--secclr);
+            border-radius: 4px;
+            padding: 12px;
+            width: 100%;
+            font-size: 14px;
+            color: var(--secclr);
+            background-color: var(--mainclr);
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+        }
+        .form-group .input-group .input-icon input:focus {
+            outline: none;
+            border-color: var(--secclr);
+            background-color: #fff;
+            box-shadow: 0 0 0 3px rgba(221, 37, 37, 0.15);
+        }
 
-        button {
+        .button {
             background-color: var(--mainclr);
             font-family: var(--mainfont);
             color: var(--secclr);
             padding: 10px 20px;
-            border: solid 2px;
+            border: solid 2px var(--secclr);
             border-radius: 10px;
             cursor: pointer;
             width: 100%;
             margin: 10px 0;
             font-size: 1rem;
+            transition: background 0.2s, color 0.2s;
         }
-
-        button:hover {
+        .button:hover {
             background-color: var(--secclr);
             color: var(--mainclr);
         }
@@ -109,4 +132,186 @@ body {
 
 .error-message i {
     font-size: 1.2rem;
+}
+
+/* Calendar Section */
+.calendar-section {
+    margin: 2rem 0;
+    background-color: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.calendar-section h3 {
+    color: var(--secclr);
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+}
+
+.calendar-container {
+    width: 100%;
+    margin: 0 auto;
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.calendar-header button {
+    background: none;
+    border: none;
+    color: var(--secclr);
+    cursor: pointer;
+    padding: 0.5rem;
+    font-size: 1rem;
+    border-radius: 50%;
+    transition: background 0.2s, color 0.2s;
+}
+
+.calendar-header h4 {
+    color: var(--secclr);
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.weekdays div {
+    text-align: center;
+    color: var(--secclr);
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.calendar-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.5rem;
+}
+
+.calendar-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--secclr);
+    transition: all 0.2s ease;
+}
+
+.calendar-day.empty {
+    cursor: default;
+}
+
+.calendar-day.past {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.calendar-day.selected {
+    background-color: var(--secclr);
+    color: var(--mainclr);
+}
+
+.calendar-day:hover:not(.empty):not(.past) {
+    background-color: rgba(221, 37, 37, 0.1);
+}
+
+.newtrip-flex {
+    display: flex;
+    flex-direction: row;
+    gap: 2.5rem;
+    align-items: flex-start;
+    justify-content: center;
+    margin-top: 2rem;
+}
+
+.newtrip-form {
+    flex: 1 1 320px;
+    max-width: 400px;
+}
+
+.calendar-section {
+    flex: 1 1 320px;
+    max-width: 400px;
+    min-width: 300px;
+}
+
+.newtrip-form h1 {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: var(--secclr);
+    text-align: left;
+}
+.newtrip-form p {
+    font-size: 1rem;
+    color: var(--secclr);
+    margin-bottom: 24px;
+    text-align: left;
+}
+
+@media (max-width: 900px) {
+    .newtrip-flex {
+        flex-direction: column;
+        gap: 2rem;
+        align-items: stretch;
+    }
+    .calendar-section, .newtrip-form {
+        max-width: 100%;
+        min-width: 0;
+    }
+}
+
+/* Google Places Autocomplete Dropdown Custom Styling */
+.pac-container {
+    border-radius: 8px !important;
+    border: 1.5px solid var(--secclr, #dd2525) !important;
+    box-shadow: 0 4px 16px rgba(221, 37, 37, 0.08) !important;
+    font-family: var(--mainfont, sans-serif) !important;
+    z-index: 2000 !important;
+    background: #fff !important;
+}
+.pac-item {
+    font-size: 1rem;
+    color: var(--secclr, #dd2525) !important;
+    border-bottom: 1px solid #f3eaea !important;
+    padding: 10px 16px !important;
+    background: #fff !important;
+    transition: background 0.2s;
+}
+.pac-item:hover, .pac-item-selected {
+    background: #ffeaea !important;
+    color: var(--secclr, #dd2525) !important;
+}
+.pac-icon {
+    color: var(--secclr, #dd2525) !important;
+}
+.pac-item-query {
+    color: var(--secclr, #dd2525) !important;
+    font-weight: bold;
+}
+.pac-matched {
+    color: var(--secclr, #dd2525) !important;
+    font-weight: bold;
+}
+
+.blocked-date {
+    background: none !important;
+    color: #e0bcbc !important;
+    opacity: 0.7 !important;
+    cursor: not-allowed !important;
+    font-size: 0.95em;
+    /* No line-through */
 }

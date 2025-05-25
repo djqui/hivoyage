@@ -53,6 +53,9 @@ public class TripService {
 
         List<Trip> existingTrips = tripRepo.findByUser(user);
         for (Trip existingTrip : existingTrips) {
+            // Ignore the trip being edited
+            if (existingTrip.getId() != null && newTrip.getId() != null && existingTrip.getId().equals(newTrip.getId())) continue;
+
             if (existingTrip.getStartDate() != null && existingTrip.getEndDate() != null) {
                 if (!(newTrip.getEndDate().isBefore(existingTrip.getStartDate()) ||
                       newTrip.getStartDate().isAfter(existingTrip.getEndDate()))) {
@@ -66,6 +69,41 @@ public class TripService {
     // Save a new trip for a specific user
     public Trip save(Trip trip, User user) {
         log.info("Saving trip: {} for user: {}", trip, user.getEmail());
+        
+        // Validate destination
+        if (trip.getDestination() == null || trip.getDestination().trim().isEmpty()) {
+            log.warn("Cannot save trip: Empty destination for user: {}", user.getEmail());
+            throw new IllegalStateException("Destination cannot be empty");
+        }
+        
+        // Validate dates
+        LocalDate today = LocalDate.now();
+        if (trip.getStartDate() == null || trip.getEndDate() == null) {
+            log.warn("Cannot save trip: Missing dates for user: {}", user.getEmail());
+            throw new IllegalStateException("Start and end dates are required");
+        }
+        
+        if (trip.getStartDate().isBefore(today)) {
+            log.warn("Cannot save trip: Start date is in the past for user: {}", user.getEmail());
+            throw new IllegalStateException("Cannot create trips with start dates in the past");
+        }
+        
+        if (trip.getEndDate().isBefore(trip.getStartDate())) {
+            log.warn("Cannot save trip: End date is before start date for user: {}", user.getEmail());
+            throw new IllegalStateException("End date cannot be before start date");
+        }
+        
+        // Prevent exact duplicate trip (same destination, start, and end date)
+        List<Trip> existingTrips = tripRepo.findByUser(user);
+        for (Trip existingTrip : existingTrips) {
+            if (existingTrip.getDestination().equalsIgnoreCase(trip.getDestination()) &&
+                existingTrip.getStartDate() != null && existingTrip.getEndDate() != null &&
+                existingTrip.getStartDate().isEqual(trip.getStartDate()) &&
+                existingTrip.getEndDate().isEqual(trip.getEndDate())) {
+                log.warn("Cannot save trip: Duplicate trip (same destination and dates) for user: {}", user.getEmail());
+                throw new IllegalStateException("You already have a trip to this destination with the same dates.");
+            }
+        }
         
         // Check for overlapping dates
         if (hasOverlappingDates(trip, user)) {

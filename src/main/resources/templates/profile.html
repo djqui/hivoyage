@@ -101,7 +101,7 @@
 
                 <div class="form-group">
                     <label for="location">Location</label>
-                    <input type="text" id="location" th:field="*{location}" class="form-control">
+                    <input id="location" type="text" th:field="*{location}" placeholder="Enter your location" />
                 </div>
 
                 <div class="btn-group">
@@ -110,5 +110,27 @@
             </form>
         </div>
     </main>
+
+    <!-- Use the actual API key as in tripdetails.html -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCnA7J-Iz0f5A3cr8tRDrR-HcB8K-J9IAM&libraries=places"></script>
+    <script>
+        function initProfileLocationAutocomplete() {
+            const locationInput = document.getElementById('location');
+            if (!locationInput) return;
+            const autocomplete = new google.maps.places.Autocomplete(locationInput, {
+                types: ['geocode'],
+                fields: ['formatted_address', 'geometry']
+            });
+            autocomplete.addListener('place_changed', function() {
+                const place = autocomplete.getPlace();
+                if (place.geometry && place.formatted_address) {
+                    locationInput.value = place.formatted_address;
+                }
+            });
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            initProfileLocationAutocomplete();
+        });
+    </script>
 </body>
 </html> 

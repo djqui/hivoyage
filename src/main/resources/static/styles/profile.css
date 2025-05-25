@@ -103,33 +103,52 @@ main {
     gap: 0.5rem;
 }
 
-label {
-    font-weight: 600;
-    color: var(--secclr);
+.form-group label {
+    display: block;
+    color: var(--secclr, #dd2525);
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 8px;
 }
 
-.form-control {
+.form-group input[type="text"],
+.form-group input[type="email"],
+.form-group input[type="date"] {
     width: 100%;
     padding: 12px;
-    border: 1px solid var(--secclr);
+    border: 1.5px solid var(--secclr, #dd2525);
     border-radius: 4px;
-    background-color: var(--mainclr);
-    color: var(--secclr);
+    background-color: var(--mainclr, #fffef1);
+    color: var(--secclr, #dd2525);
     font-size: 14px;
     box-sizing: border-box;
-    transition: all 0.3s ease;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.form-group input[type="text"]:focus,
+.form-group input[type="email"]:focus,
+.form-group input[type="date"]:focus,
+.form-group input[type="text"][readonly],
+.form-group input[type="email"][readonly],
+.form-group input[type="date"][readonly] {
+    outline: none;
+    border-color: var(--secclr, #dd2525);
+    background-color: #fff;
+    box-shadow: 0 0 0 3px rgba(221, 37, 37, 0.15);
 }
 
 .form-control:focus {
     outline: none;
-    border-color: var(--secclr);
-    box-shadow: 0 0 0 3px rgba(221, 37, 37, 0.2);
+    border-color: var(--secclr, #dd2525);
+    background-color: #fff;
+    box-shadow: 0 0 0 3px rgba(221, 37, 37, 0.15);
 }
 
 .form-control[readonly] {
-    background-color: var(--mainclr);
-    cursor: not-allowed;
-    opacity: 0.8;
+    background-color: var(--mainclr, #fffef1) !important;
+    border-color: var(--secclr, #dd2525) !important;
+    box-shadow: none !important;
+    color: var(--secclr, #dd2525) !important;
 }
 
 .form-text {
@@ -232,5 +251,62 @@ label {
     width: 8px;
     height: 8px;
     opacity: 0.75;
+}
+
+/* Google Places Autocomplete Dropdown Custom Styling */
+.pac-container {
+    border-radius: 8px !important;
+    border: 1.5px solid var(--secclr, #dd2525) !important;
+    box-shadow: 0 4px 16px rgba(221, 37, 37, 0.08) !important;
+    font-family: var(--mainfont, sans-serif) !important;
+    z-index: 2000 !important;
+    background: #fff !important;
+}
+.pac-item {
+    font-size: 1rem;
+    color: var(--secclr, #dd2525) !important;
+    border-bottom: 1px solid #f3eaea !important;
+    padding: 10px 16px !important;
+    background: #fff !important;
+    transition: background 0.2s;
+}
+.pac-item:hover, .pac-item-selected {
+    background: #ffeaea !important;
+    color: var(--secclr, #dd2525) !important;
+}
+.pac-icon {
+    color: var(--secclr, #dd2525) !important;
+}
+.pac-item-query {
+    color: var(--secclr, #dd2525) !important;
+    font-weight: bold;
+}
+.pac-matched {
+    color: var(--secclr, #dd2525) !important;
+    font-weight: bold;
+}
+
+/* Red glow for location input when focused or when autocomplete is open */
+#location:focus,
+#location.pac-target-input:focus,
+#location.pac-target-input:active {
+    outline: none;
+    border-color: var(--secclr, #dd2525);
+    background-color: #fff;
+    box-shadow: 0 0 0 3px rgba(221, 37, 37, 0.15);
+}
+
+/* Optional: keep glow when autocomplete dropdown is open */
+.pac-container:empty + #location,
+#location.pac-target-input:focus {
+    box-shadow: 0 0 0 3px rgba(221, 37, 37, 0.15);
+}
+
+.form-group input[type="text"]::placeholder,
+.form-group input[type="email"]::placeholder,
+.form-group input[type="date"]::placeholder,
+.form-control::placeholder {
+    color: var(--secclr, #dd2525);
+    opacity: 0.8;
 }
 

@@ -336,7 +336,9 @@ function toggleDay(header) {
         
         // Populate stop dropdowns and focus map
         populateStopDropdowns(content);
-        focusMapOnDay(content);
+        setTimeout(() => {
+            focusMapOnDay(content);
+        }, 100);
     } else {
         content.style.display = 'none';
         chevron.style.transform = 'rotate(-90deg)';
@@ -353,80 +355,81 @@ function toggleDay(header) {
 // New function to focus map on stops of the expanded day
 function focusMapOnDay(dayContentElement) {
     const stops = dayContentElement.querySelectorAll('.stop-item');
-    currentDayStops = []; // Clear previous day's stops
-            if (stops.length > 0) {
-        // Clear existing markers and route
+    currentDayStops = [];
+    if (stops.length > 0) {
         clearMap();
-        
-        // Process stops
         const bounds = new google.maps.LatLngBounds();
-        
+        const geocodePromises = [];
+
         stops.forEach((stop, index) => {
-                    const location = stop.querySelector('.stop-address').textContent;
-                                    const stopName = stop.querySelector('.stop-name').textContent;
-                                    const stopTime = stop.querySelector('.stop-time').textContent;
-            
-            // Store stop data
+            const location = stop.querySelector('.stop-address').textContent;
+            const stopName = stop.querySelector('.stop-name').textContent;
+            const stopTime = stop.querySelector('.stop-time').textContent;
+            console.log(`Processing stop: ${stopName}, address: ${location}`);
             currentDayStops.push({
                 name: stopName,
                 address: location,
                 time: stopTime
             });
-            
             if (location) {
                 const geocoder = new google.maps.Geocoder();
-                geocoder.geocode({ address: location }, (results, status) => {
-                    if (status === 'OK' && results[0]) {
-                        const position = results[0].geometry.location;
-                        bounds.extend(position);
-                        
-                        // Add marker
-                        const marker = new google.maps.Marker({
-                            position: position,
-                            map: map,
-                            title: stopName
-                        });
-                        markers.push(marker);
-                        
-                        // Add info window
-                        const infoWindow = new google.maps.InfoWindow({
-                            content: `<div class='custom-gm-infowindow'>
-                                <div class='infowindow-title'>${stopName}</div>
-                                <div class='infowindow-address'>${location}</div>
-                                <div class='infowindow-time'>${stopTime ? 'Time: ' + stopTime : ''}</div>
-                            </div>`
-                        });
-                        marker.addListener('click', () => {
-                            infoWindow.open(map, marker);
-                        });
-                        
-                        // Add stop label
-                        const label = new google.maps.Marker({
-                            position: position,
-                            map: map,
-                            label: {
-                                text: `${index + 1}`,
-                                color: '#fff',
-                                fontSize: '14px',
-                                fontWeight: 'bold'
-                            },
-                            icon: {
-                                path: google.maps.SymbolPath.CIRCLE,
-                                scale: 15,
-                                fillColor: '#dd2525',
-                                fillOpacity: 1,
-                                strokeWeight: 0
-                            },
-                            zIndex: 500 // Ensure label is above the pin
-                        });
-                        markers.push(label);
-                        
-                        // If this is the last stop processed, fit bounds
-                        if (index === stops.length - 1) {
-                            map.fitBounds(bounds);
+                const promise = new Promise((resolve) => {
+                    geocoder.geocode({ address: location }, (results, status) => {
+                        if (status === 'OK' && results[0]) {
+                            const position = results[0].geometry.location;
+                            bounds.extend(position);
+                            // Add marker
+                            const marker = new google.maps.Marker({
+                                position: position,
+                                map: map,
+                                title: stopName
+                            });
+                            markers.push(marker);
+                            // Add info window
+                            const infoWindow = new google.maps.InfoWindow({
+                                content: `<div class='custom-gm-infowindow'>
+                                    <div class='infowindow-title'>${stopName}</div>
+                                    <div class='infowindow-address'>${location}</div>
+                                    <div class='infowindow-time'>${stopTime ? 'Time: ' + stopTime : ''}</div>
+                                </div>`
+                            });
+                            marker.addListener('click', () => {
+                                infoWindow.open(map, marker);
+                            });
+                            // Add stop label
+                            const label = new google.maps.Marker({
+                                position: position,
+                                map: map,
+                                label: {
+                                    text: `${index + 1}`,
+                                    color: '#fff',
+                                    fontSize: '14px',
+                                    fontWeight: 'bold'
+                                },
+                                icon: {
+                                    path: google.maps.SymbolPath.CIRCLE,
+                                    scale: 15,
+                                    fillColor: '#dd2525',
+                                    fillOpacity: 1,
+                                    strokeWeight: 0
+                                },
+                                zIndex: 500
+                            });
+                            markers.push(label);
+                        } else {
+                            console.warn('Geocoding failed for:', location, 'Status:', status);
                         }
-                    }
+                        resolve();
+                    });
                 });
+                geocodePromises.push(promise);
+            }
+        });
+
+        // After all geocoding is done, fit bounds
+        Promise.all(geocodePromises).then(() => {
+            if (!bounds.isEmpty()) {
+                map.fitBounds(bounds);
             }
         });
     }
@@ -1244,6 +1247,35 @@ function saveStop(button) {
 
 function removeItem(button) {
     const stopItem = button.closest('.stop-item');
+    // If in edit mode (unsaved), just remove from DOM
+    if (stopItem.classList.contains('editing')) {
+        const listItem = stopItem.closest('li');
+        if (listItem) {
+            listItem.remove();
+        } else {
+            stopItem.remove();
+        }
+        // Update stop order numbers for this day
+        const stopsList = button.closest('.stops');
+        if (stopsList) {
+            updateStopOrderNumbers(stopsList);
+            // Refresh the map for this day
+            const dayContent = stopsList.closest('.day-content');
+            if (dayContent) {
+                setTimeout(() => {
+                    focusMapOnDay(dayContent);
+                    // Update route planning dropdowns and route options
+                    populateStopDropdowns(dayContent);
+                    handleStopSelectChange();
+                }, 100);
+            }
+        }
+        updateItineraryProgress();
+        if (typeof updateCalendarWithItinerary === 'function') {
+            updateCalendarWithItinerary();
+        }
+        return;
+    }
     const stopsList = stopItem.closest('.stops');
     const dayMatch = stopsList.id.match(/stops-day-(\d+)/);
     const dayNumber = dayMatch ? parseInt(dayMatch[1]) : 1;
@@ -1275,8 +1307,8 @@ function removeItem(button) {
     deleteParams.append('description', description);
     
     // Get CSRF token
-    const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
-    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+    const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
     
     // Show loading state
     button.disabled = true;
@@ -1317,10 +1349,22 @@ function removeItem(button) {
         } else {
             stopItem.remove();
         }
-        
+        // Update stop order numbers for this day
+        if (stopsList) {
+            updateStopOrderNumbers(stopsList);
+            // Refresh the map for this day
+            const dayContent = stopsList.closest('.day-content');
+            if (dayContent) {
+                setTimeout(() => {
+                    focusMapOnDay(dayContent);
+                    // Update route planning dropdowns and route options
+                    populateStopDropdowns(dayContent);
+                    handleStopSelectChange();
+                }, 100);
+            }
+        }
         // Update progress
         updateItineraryProgress();
-        
         // Update calendar if it exists
         if (typeof updateCalendarWithItinerary === 'function') {
             updateCalendarWithItinerary();
@@ -1749,7 +1793,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Auto-create days based on trip duration if no days exist yet
     const existingDayContainers = document.querySelectorAll('.day-container');
-    if (existingDayContainers.length === 0) {
+    const existingStops = document.querySelectorAll('.stop-item');
+    if (existingDayContainers.length === 0 && existingStops.length === 0) {
         const tripDuration = getTripDuration();
         // Only auto-create days if this is a new trip (no days yet)
         for (let i = 0; i < tripDuration; i++) {
@@ -2170,15 +2215,17 @@ function addStop(button, day) {
 const originalAddStop = addStop;
 addStop = function(button, day) {
     originalAddStop(button, day);
-    // Update calendar after a short delay to allow for the DOM to update
-    setTimeout(updateCalendarWithItinerary, 500);
+    if (typeof updateCalendarWithItinerary === 'function') {
+        updateCalendarWithItinerary();
+    }
 };
 
 const originalRemoveItem = removeItem;
 removeItem = function(element) {
     originalRemoveItem(element);
-    setTimeout(updateCalendarWithItinerary, 500);
-    
+    if (typeof updateCalendarWithItinerary === 'function') {
+        updateCalendarWithItinerary();
+    }
     // Also refresh the map view after removing an item
     setTimeout(() => {
         const dayContent = element.closest('.day-content');
@@ -2192,7 +2239,19 @@ removeItem = function(element) {
 const originalSaveStop = saveStop;
 saveStop = function(element) {
     originalSaveStop(element);
-    setTimeout(updateCalendarWithItinerary, 500);
+    if (typeof updateCalendarWithItinerary === 'function') {
+        updateCalendarWithItinerary();
+    }
+    // Focus map on all stops of the day after saving, after DOM updates
+    const stopItem = element.closest('.stop-item');
+    if (stopItem) {
+        const dayContent = stopItem.closest('.day-content');
+        if (dayContent) {
+            setTimeout(() => {
+                focusMapOnDay(dayContent);
+            }, 100);
+        }
+    }
 };
 
 // Geoapify Map Integration
@@ -2320,7 +2379,9 @@ function toggleDay(header) {
         
         // Populate stop dropdowns and focus map
         populateStopDropdowns(content);
-        focusMapOnDay(content);
+        setTimeout(() => {
+            focusMapOnDay(content);
+        }, 100);
     } else {
         content.style.display = 'none';
         chevron.style.transform = 'rotate(-90deg)';

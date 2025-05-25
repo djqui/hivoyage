@@ -18,6 +18,7 @@ import com.example.demo.service.TripService;
 import com.example.demo.security.CustomUserDetails;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -529,5 +530,62 @@ public class TripController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body("Error updating coordinates: " + e.getMessage());
         }
+    }
+
+    @PostMapping("/user/trip/{id}/update")
+    @ResponseBody
+    public ResponseEntity<?> updateTrip(@PathVariable Long id, @RequestBody Map<String, String> data, @AuthenticationPrincipal CustomUserDetails userDetails) {
+        try {
+            Trip trip = tripService.getTripByIdForUser(id, userDetails.getUser());
+            if (trip == null) {
+                return ResponseEntity.badRequest().body("Trip not found");
+            }
+            // Verify trip belongs to user
+            if (!trip.getUser().getId().equals(userDetails.getUser().getId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Not authorized to update this trip");
+            }
+            // Check if trip is completed
+            if (trip.isCompleted()) {
+                return ResponseEntity.badRequest().body("Cannot update completed trips");
+            }
+            String newDestination = data.get("destination");
+            LocalDate newStartDate = LocalDate.parse(data.get("startDate"));
+            LocalDate newEndDate = LocalDate.parse(data.get("endDate"));
+            // Validate destination
+            if (newDestination == null || newDestination.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("Destination cannot be empty");
+            }
+            // Validate dates
+            if (newStartDate.isBefore(LocalDate.now())) {
+                return ResponseEntity.badRequest().body("Cannot set start date in the past");
+            }
+            if (newEndDate.isBefore(newStartDate)) {
+                return ResponseEntity.badRequest().body("End date cannot be before start date");
+            }
+            trip.setDestination(newDestination);
+            trip.setStartDate(newStartDate);
+            trip.setEndDate(newEndDate);
+            tripService.save(trip, userDetails.getUser());
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            log.error("Error updating trip: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/api/trips/dates")
+    @ResponseBody
+    public ResponseEntity<?> getTripDates(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        User user = userDetails.getUser();
+        List<Trip> trips = tripService.getAllTripsForUser(user);
+        List<Map<String, Object>> dates = trips.stream()
+            .map(trip -> {
+                Map<String, Object> map = new HashMap<>();
+                map.put("startDate", trip.getStartDate());
+                map.put("endDate", trip.getEndDate());
+                return map;
+            })
+            .collect(Collectors.toList());
+        return ResponseEntity.ok(dates);
     }
 }

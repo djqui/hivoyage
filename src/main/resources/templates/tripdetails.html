@@ -51,9 +51,13 @@
             <div class="trip-header">
                 <h1 th:text="${trip.destination}">Destination</h1>
                 <div class="trip-actions">
-                    <button class="delete-trip-btn" onclick="deleteTrip()">
+                    <button th:if="${!trip.completed}" class="delete-trip-btn" onclick="deleteTrip()">
                         <i class="fas fa-trash"></i>
                         Delete Trip
+                    </button>
+                    <button th:if="${!trip.completed}" class="edit-trip-btn" onclick="editTrip()">
+                        <i class="fas fa-edit"></i>
+                        Edit Trip
                     </button>
                 </div>
             </div>
@@ -119,7 +123,7 @@
                             </div>
                             <div class="day-content" style="display: none;">
                                 <ul class="stops" id="stops-day-1"></ul>
-                                <button type="button" class="add-place-btn" onclick="addStop(this, 1)">
+                                <button th:if="${!trip.completed}" type="button" class="add-place-btn" onclick="addStop(this, 1)">
                                     <i class="fas fa-plus"></i>
                                     Add a place
                                 </button>
@@ -168,14 +172,14 @@
                                         </div>
                                     </li>
                                 </ul>
-                                <button type="button" class="add-place-btn" th:onclick="'addStop(this, ' + ${item.day + 1} + ')'">
+                                <button th:if="${!trip.completed}" type="button" class="add-place-btn" th:onclick="'addStop(this, ' + ${item.day + 1} + ')'">
                                     <i class="fas fa-plus"></i>
                                     Add a place
                                 </button>
                             </div>
                         </div>
                     </div>
-                    <button type="button" class="add-place-btn add-day-btn" onclick="addItineraryDay()">
+                    <button th:if="${!trip.completed}" type="button" class="add-place-btn add-day-btn" onclick="addItineraryDay()">
                         <i class="fas fa-plus"></i>
                         Add Day
                     </button>
@@ -234,7 +238,7 @@
                         <div id="packing-input-container" style="display: none;" class="packing-input-container">
                             <input type="text" id="packing-item-name" placeholder="Add item to pack...">
                             <div class="packing-input-buttons">
-                                <button class="save-btn" onclick="saveNewPackingItem()" title="Save">
+                                <button th:if="${!trip.completed}" class="save-btn" onclick="saveNewPackingItem()" title="Save">
                                     <i class="fas fa-check"></i>
                                 </button>
                                 <button class="cancel-btn" onclick="cancelAddPackingItem()" title="Cancel">
@@ -267,5 +271,104 @@
             </div>
         </div>
     </main>
+
+    <!-- Edit Trip Modal -->
+    <div id="edit-trip-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit Trip</h2>
+                <button class="close-modal" onclick="closeEditTripModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-trip-form">
+                    <div class="form-group">
+                        <label for="edit-destination">Destination</label>
+                        <input type="text" id="edit-destination" required th:value="${trip.destination}" />
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-start-date">Start Date</label>
+                        <input type="date" id="edit-start-date" th:value="${#temporals.format(trip.startDate, 'yyyy-MM-dd')}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-end-date">End Date</label>
+                        <input type="date" id="edit-end-date" th:value="${#temporals.format(trip.endDate, 'yyyy-MM-dd')}" required>
+                    </div>
+                    <div class="form-group center-btn">
+                        <button type="submit" class="button">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function editTrip() {
+            document.getElementById('edit-trip-modal').style.display = 'block';
+        }
+
+        function closeEditTripModal() {
+            document.getElementById('edit-trip-modal').style.display = 'none';
+        }
+
+        document.getElementById('edit-trip-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const tripId = window.location.pathname.split('/').pop();
+            const destination = document.getElementById('edit-destination').value;
+            const startDate = document.getElementById('edit-start-date').value;
+            const endDate = document.getElementById('edit-end-date').value;
+
+            // CSRF token support
+            const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+            const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+            const headers = {
+                'Content-Type': 'application/json',
+            };
+            if (csrfToken && csrfHeader) {
+                headers[csrfHeader] = csrfToken;
+            }
+
+            fetch(`/user/trip/${tripId}/update`, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify({
+                    destination: destination,
+                    startDate: startDate,
+                    endDate: endDate
+                })
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Only reload after the fetch is fully done
+                    setTimeout(() => { window.location.reload(); }, 100);
+                } else {
+                    return response.text().then(text => { throw new Error(text); });
+                }
+            })
+            .catch(error => {
+                // Only show the alert if the update truly failed
+                if (!error.message.includes('Failed to fetch')) {
+                    alert('Error updating trip: ' + error.message);
+                }
+            });
+        });
+
+        function initEditTripAutocomplete() {
+            const destinationInput = document.getElementById('edit-destination');
+            if (!destinationInput) return;
+            const autocomplete = new google.maps.places.Autocomplete(destinationInput, {
+                types: ['geocode', 'establishment'],
+                fields: ['formatted_address', 'geometry', 'name']
+            });
+            autocomplete.addListener('place_changed', function() {
+                const place = autocomplete.getPlace();
+                if (place.geometry && place.formatted_address) {
+                    destinationInput.value = place.formatted_address;
+                }
+            });
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            initEditTripAutocomplete();
+        });
+    </script>
 </body>
 </html>

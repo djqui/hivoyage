@@ -75,4 +75,8 @@ public class Trip {
 
     public List<PackingItem> getPackingList() { return packingList; }
     public void setPackingList(List<PackingItem> packingList) { this.packingList = packingList; }
+
+    public boolean isCompleted() {
+        return endDate != null && endDate.isBefore(LocalDate.now());
+    }
 }

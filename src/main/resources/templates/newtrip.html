@@ -39,35 +39,84 @@
     </header>
 
     <div class="container">
-        <h1>Plan a New Trip</h1>
-        <p>Start planning your trip by filling in the details below!</p>
-        
-        <!-- Error message display -->
-        <div th:if="${error}" class="error-message">
-            <i class="fas fa-exclamation-circle"></i>
-            <span th:text="${error}"></span>
-        </div>
-        
-        <form th:action="@{/user/saveTrip}" th:object="${trip}" method="post">
-            <div class="form-group">
-                <label for="destination">Where to?</label>
-                <input id="destination" type="text" placeholder="e.g Japan, South Korea" th:field="*{destination}" />
-            </div>
-            <div class="form-group">
-                <label for="dates">Dates</label>
-                <div class="input-group">
-                    <div class="input-icon">
-                        <input id="start-date" type="date" placeholder="Start Date" th:field="*{startDate}" />
+        <div class="newtrip-flex">
+            <div class="newtrip-form">
+                <h1>Plan a New Trip</h1>
+                <p>Start planning your trip by filling in the details below!</p>
+                <!-- Error message display -->
+                <div th:if="${error}" class="error-message">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span th:text="${error}"></span>
+                </div>
+                <form th:action="@{/user/saveTrip}" th:object="${trip}" method="post">
+                    <div class="form-group">
+                        <label for="destination">Where to?</label>
+                        <input id="destination" type="text" placeholder="e.g Japan, South Korea" th:field="*{destination}" />
                     </div>
-                    <div class="input-icon">
-                        <input id="end-date" type="date" placeholder="End Date" th:field="*{endDate}" />
+                    <div class="form-group">
+                        <label for="dates">Dates</label>
+                        <div class="input-group">
+                            <div class="input-icon">
+                                <input id="start-date" type="date" placeholder="Start Date" th:field="*{startDate}" />
+                            </div>
+                            <div class="input-icon">
+                                <input id="end-date" type="date" placeholder="End Date" th:field="*{endDate}" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <button class="button" type="submit">Create</button>
+                    </div>
+                </form>
+            </div>
+            <!-- Calendar Section always visible -->
+            <div class="calendar-section">
+                <h3>Calendar</h3>
+                <div class="calendar-container">
+                    <div class="calendar-header">
+                        <button id="prev-month"><i class="fas fa-chevron-left"></i></button>
+                        <h4 id="calendar-month-year">January 2023</h4>
+                        <button id="next-month"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                    <div class="weekdays">
+                        <div>Sun</div>
+                        <div>Mon</div>
+                        <div>Tue</div>
+                        <div>Wed</div>
+                        <div>Thu</div>
+                        <div>Fri</div>
+                        <div>Sat</div>
+                    </div>
+                    <div class="calendar-days" id="calendar-days">
+                        <!-- Calendar days will be inserted here by JavaScript -->
                     </div>
                 </div>
             </div>
-            <div class="form-group">
-                <button class="button" type="submit">Create</button>
-            </div>
-        </form>
+        </div>
     </div>
+
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCnA7J-Iz0f5A3cr8tRDrR-HcB8K-J9IAM&libraries=places"></script>
+    <script src="/scripts/newtrip.js"></script>
+    <script>
+        // Initialize Google Places Autocomplete
+        function initAutocomplete() {
+            const destinationInput = document.getElementById('destination');
+            const autocomplete = new google.maps.places.Autocomplete(destinationInput, {
+                types: ['geocode', 'establishment'],
+                fields: ['formatted_address', 'geometry', 'name']
+            });
+            
+            autocomplete.addListener('place_changed', function() {
+                const place = autocomplete.getPlace();
+                if (place.geometry) {
+                    // Update the input with the formatted address
+                    destinationInput.value = place.formatted_address;
+                }
+            });
+        }
+        
+        // Initialize when the page loads
+        document.addEventListener('DOMContentLoaded', initAutocomplete);
+    </script>
 </body>
 </html>
