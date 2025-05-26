@@ -1,1 +1,0 @@
-web: java -jar target/tripplanning-3.4.2.jar 
