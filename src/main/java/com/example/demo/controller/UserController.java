@@ -237,6 +237,7 @@ public class UserController {
             model.addAttribute("user", updatedUser);
             return "profile";
         } catch (Exception e) {
+            e.printStackTrace();
             model.addAttribute("error", "Failed to update profile picture: " + e.getMessage());
             model.addAttribute("user", userDetails.getUser());
             return "profile";

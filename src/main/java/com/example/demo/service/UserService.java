@@ -138,18 +138,23 @@ public class UserService {
 
     @Transactional
     public User updateProfilePicture(Integer userId, MultipartFile file) {
-        User user = userRepository.findById(userId)
-            .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        try {
+            User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        // Delete old profile picture if it exists
-        if (user.getProfilePicture() != null) {
-            fileStorageService.deleteFile(user.getProfilePicture(), "profile-pictures");
+            // Delete old profile picture if it exists
+            if (user.getProfilePicture() != null) {
+                fileStorageService.deleteFile(user.getProfilePicture(), "profile-pictures");
+            }
+
+            // Store new profile picture
+            String filename = fileStorageService.storeFile(file, "profile-pictures");
+            user.setProfilePicture(filename);
+
+            return userRepository.save(user);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            throw ex;
         }
-
-        // Store new profile picture
-        String filename = fileStorageService.storeFile(file, "profile-pictures");
-        user.setProfilePicture(filename);
-
-        return userRepository.save(user);
     }
 }

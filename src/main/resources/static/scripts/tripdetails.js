@@ -1106,7 +1106,7 @@ function saveStop(button) {
             headers[csrfHeader] = csrfToken;
         }
         
-        fetch(`/user/trip/${tripId}/saveItineraryAjax`, {
+        fetch(`${CONTEXT_PATH}user/trip/${tripId}/saveItineraryAjax`, {
             method: 'POST',
             headers: headers,
             body: params.toString(),
@@ -1214,7 +1214,7 @@ function saveStop(button) {
         }
         
         // Delete the original item first, then save the new one
-        fetch(`/user/trip/${tripId}/deleteItinerary`, {
+        fetch(`${CONTEXT_PATH}user/trip/${tripId}/deleteItinerary`, {
             method: 'POST',
             headers: headers,
             body: deleteParams.toString(),
@@ -1326,7 +1326,7 @@ function removeItem(button) {
     }
     
     // Send delete request
-    fetch(`/user/trip/${tripId}/deleteItinerary`, {
+    fetch(`${CONTEXT_PATH}user/trip/${tripId}/deleteItinerary`, {
         method: 'POST',
         headers: headers,
         body: deleteParams.toString(),
@@ -1422,7 +1422,7 @@ function saveNewPackingItem() {
     saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
     
     // Send to backend using fetchWithCsrf helper
-    fetchWithCsrf(`/user/trip/${tripId}/savePackingItem`, {
+    fetchWithCsrf(`${CONTEXT_PATH}user/trip/${tripId}/savePackingItem`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -1528,7 +1528,7 @@ function savePackingItem(button, originalName) {
     button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
     
     // Send to backend using fetchWithCsrf helper
-    fetchWithCsrf(`/user/trip/${tripId}/updatePackingItem`, {
+    fetchWithCsrf(`${CONTEXT_PATH}user/trip/${tripId}/updatePackingItem`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -1581,7 +1581,7 @@ function deletePackingItem(button) {
     button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
     
     // Send to backend using fetchWithCsrf helper
-    fetchWithCsrf(`/user/trip/${tripId}/deletePackingItem`, {
+    fetchWithCsrf(`${CONTEXT_PATH}user/trip/${tripId}/deletePackingItem`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -1618,7 +1618,7 @@ function updatePackingItemStatus(checkbox) {
     const tripId = window.location.pathname.split('/').pop();
     
     // Send to backend using fetchWithCsrf helper
-    fetchWithCsrf(`/user/trip/${tripId}/updatePackingItemStatus`, {
+    fetchWithCsrf(`${CONTEXT_PATH}user/trip/${tripId}/updatePackingItemStatus`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -1674,7 +1674,7 @@ function deleteDay(button) {
     const tripId = window.location.pathname.split('/').pop();
     
     // Send to backend using fetchWithCsrf helper
-    fetchWithCsrf(`/user/trip/${tripId}/deleteDay`, {
+    fetchWithCsrf(`${CONTEXT_PATH}user/trip/${tripId}/deleteDay`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -1757,13 +1757,13 @@ function deleteTrip() {
     }
     
     // Send to backend using fetchWithCsrf helper
-    fetchWithCsrf(`/user/trip/${tripId}/delete`, {
+    fetchWithCsrf(`${CONTEXT_PATH}user/trip/${tripId}/delete`, {
         method: 'POST'
     })
     .then(response => response.text())
     .then(() => {
         // Redirect to homepage
-        window.location.href = '/user/homepage';
+        window.location.href = `${CONTEXT_PATH}user/homepage`;
     })
     .catch(error => {
         console.error('Error deleting trip:', error);
@@ -2441,4 +2441,74 @@ function updateStopOrderNumbers(stopsList = null) {
             }
         });
     }
-} 
+}
+
+// Add the following script block to the end of the file:
+
+function editTrip() {
+    document.getElementById('edit-trip-modal').style.display = 'block';
+}
+
+function closeEditTripModal() {
+    document.getElementById('edit-trip-modal').style.display = 'none';
+}
+
+document.getElementById('edit-trip-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const tripId = window.location.pathname.split('/').pop();
+    const destination = document.getElementById('edit-destination').value;
+    const startDate = document.getElementById('edit-start-date').value;
+    const endDate = document.getElementById('edit-end-date').value;
+
+    // CSRF token support
+    const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+    const headers = {
+        'Content-Type': 'application/json',
+    };
+    if (csrfToken && csrfHeader) {
+        headers[csrfHeader] = csrfToken;
+    }
+
+    fetch(`${CONTEXT_PATH}user/trip/${tripId}/update`, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({
+            destination: destination,
+            startDate: startDate,
+            endDate: endDate
+        })
+    })
+    .then(response => {
+        if (response.ok) {
+            // Only reload after the fetch is fully done
+            setTimeout(() => { window.location.reload(); }, 100);
+        } else {
+            return response.text().then(text => { throw new Error(text); });
+        }
+    })
+    .catch(error => {
+        // Only show the alert if the update truly failed
+        if (!error.message.includes('Failed to fetch')) {
+            alert('Error updating trip: ' + error.message);
+        }
+    });
+});
+
+function initEditTripAutocomplete() {
+    const destinationInput = document.getElementById('edit-destination');
+    if (!destinationInput) return;
+    const autocomplete = new google.maps.places.Autocomplete(destinationInput, {
+        types: ['geocode', 'establishment'],
+        fields: ['formatted_address', 'geometry', 'name']
+    });
+    autocomplete.addListener('place_changed', function() {
+        const place = autocomplete.getPlace();
+        if (place.geometry && place.formatted_address) {
+            destinationInput.value = place.formatted_address;
+        }
+    });
+}
+document.addEventListener('DOMContentLoaded', function() {
+    initEditTripAutocomplete();
+});

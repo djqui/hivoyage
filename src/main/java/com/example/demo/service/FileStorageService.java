@@ -16,27 +16,30 @@ public class FileStorageService {
     private final Path fileStorageLocation;
 
     public FileStorageService(@Value("${file.upload-dir:uploads}") String uploadDir) {
-        // Get the absolute path of the project root directory
-        String projectRoot = System.getProperty("user.dir");
-        this.fileStorageLocation = Paths.get(projectRoot, uploadDir).toAbsolutePath().normalize();
-        
+        // Use the absolute path from application.properties directly
+        this.fileStorageLocation = Paths.get(uploadDir).toAbsolutePath().normalize();
         try {
             Files.createDirectories(this.fileStorageLocation);
             System.out.println("Created upload directory at: " + this.fileStorageLocation);
         } catch (IOException ex) {
+            ex.printStackTrace();
             throw new RuntimeException("Could not create the directory where the uploaded files will be stored.", ex);
         }
     }
 
     public String storeFile(MultipartFile file, String subDirectory) {
         try {
-            // Create subdirectory if it doesn't exist
-            Path targetLocation = this.fileStorageLocation.resolve(subDirectory);
+            // Sanitize subDirectory to remove leading slashes
+            String cleanSubDirectory = subDirectory.replaceAll("^[\\/]+", "");
+            Path targetLocation = this.fileStorageLocation.resolve(cleanSubDirectory);
             Files.createDirectories(targetLocation);
             System.out.println("Created subdirectory at: " + targetLocation);
 
             // Generate unique filename
             String originalFilename = file.getOriginalFilename();
+            if (originalFilename == null || !originalFilename.contains(".")) {
+                throw new RuntimeException("Invalid file name: " + originalFilename);
+            }
             String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
             String filename = UUID.randomUUID().toString() + extension;
 
@@ -47,13 +50,18 @@ public class FileStorageService {
 
             return filename;
         } catch (IOException ex) {
-            throw new RuntimeException("Could not store file. Please try again!", ex);
+            ex.printStackTrace();
+            throw new RuntimeException("Could not store file. Please try again! " + ex.getMessage(), ex);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            throw new RuntimeException("Unexpected error during file upload: " + ex.getMessage(), ex);
         }
     }
 
     public void deleteFile(String filename, String subDirectory) {
         try {
-            Path filePath = this.fileStorageLocation.resolve(subDirectory).resolve(filename);
+            String cleanSubDirectory = subDirectory.replaceAll("^[\\/]+", "");
+            Path filePath = this.fileStorageLocation.resolve(cleanSubDirectory).resolve(filename);
             Files.deleteIfExists(filePath);
             System.out.println("Deleted file at: " + filePath);
         } catch (IOException ex) {

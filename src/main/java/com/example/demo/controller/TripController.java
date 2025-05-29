@@ -556,7 +556,7 @@ public class TripController {
                 return ResponseEntity.badRequest().body("Destination cannot be empty");
             }
             // Validate dates
-            if (newStartDate.isBefore(LocalDate.now())) {
+            if (!trip.getStartDate().equals(newStartDate) && newStartDate.isBefore(LocalDate.now())) {
                 return ResponseEntity.badRequest().body("Cannot set start date in the past");
             }
             if (newEndDate.isBefore(newStartDate)) {

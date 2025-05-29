@@ -19,28 +19,33 @@
     <meta name="_csrf" th:if="${_csrf != null}" th:content="${_csrf.token}"/>
     <meta name="_csrf_header" th:if="${_csrf != null}" th:content="${_csrf.headerName}"/>
     
+    <!-- Context Path -->
+    <script th:inline="javascript">
+        const CONTEXT_PATH = [[@{/}]];
+    </script>
+    
     <title>Trip Summary</title>
 </head>
 <body>
     <header>
         <div class="logo">
-            <a href="/user/homepage">HiVoyage</a>
+            <a th:href="@{/user/homepage}">HiVoyage</a>
         </div>
         
         <nav class="header-wrapper">
             <ul class="header-nav">
-                <li><a href="/user/homepage">Dashboard</a></li>
-                <li><a href="/user/trip-summary">Trip Summary</a></li>
+                <li><a th:href="@{/user/homepage}">Dashboard</a></li>
+                <li><a th:href="@{/user/trip-summary}">Trip Summary</a></li>
                 <li class="dropdown">
-                    <a href="#" class="dropdown-icon">
+                    <a th:href="@{#}" class="dropdown-icon">
                         <img th:if="${user != null && user.profilePicture != null}" th:src="@{'/uploads/profile-pictures/' + ${user.profilePicture}}" 
                              alt="Profile Picture" class="profile-picture-small">
                         <i th:unless="${user != null && user.profilePicture != null}" class="fas fa-user"></i>
                     </a>
                     <div class="dropdown-content">
                         <p th:if="${user != null}"> Hello, <span th:text="${user != null ? user.username : 'Guest'}"></span>!</p>
-                        <a href="/user/profile">Profile</a>
-                        <a href="/logout">Logout</a>
+                        <a th:href="@{/user/profile}">Profile</a>
+                        <a th:href="@{/logout}">Logout</a>
                     </div>
                 </li>
             </ul>

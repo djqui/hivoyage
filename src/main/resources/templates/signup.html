@@ -15,7 +15,7 @@
 	    
 	    <nav class="header-wrapper">
 	        <ul class="header-nav">
-	            <li><a href="/welcome">Home</a></li>
+	            <li><a th:href="@{/welcome}">Home</a></li>
 	            <!-- <li><a href="/about">About</a></li> -->
 	        </ul>
 	    </nav>
@@ -43,7 +43,7 @@
 				<button type="Submit"> Sign up </button>
 
 		</form>
-			<a href="/login"> Already have an account?</a>
+			<a th:href="@{/login}"> Already have an account?</a>
 	</div>
 	
 

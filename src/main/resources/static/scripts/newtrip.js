@@ -111,7 +111,7 @@ let scheduledDateRanges = [];
 
 async function fetchScheduledDates() {
     try {
-        const response = await fetch('/api/trips/dates');
+        const response = await fetch(`${CONTEXT_PATH}api/trips/dates`);
         if (!response.ok) throw new Error('Failed to fetch scheduled dates');
         scheduledDateRanges = await response.json();
     } catch (e) {
@@ -149,4 +149,24 @@ function setupDatePickers() {
     }
     startInput.addEventListener('change', validateDateInput);
     endInput.addEventListener('change', validateDateInput);
-} 
+}
+
+// Initialize Google Places Autocomplete
+function initAutocomplete() {
+    const destinationInput = document.getElementById('destination');
+    const autocomplete = new google.maps.places.Autocomplete(destinationInput, {
+        types: ['geocode', 'establishment'],
+        fields: ['formatted_address', 'geometry', 'name']
+    });
+    
+    autocomplete.addListener('place_changed', function() {
+        const place = autocomplete.getPlace();
+        if (place.geometry) {
+            // Update the input with the formatted address
+            destinationInput.value = place.formatted_address;
+        }
+    });
+}
+
+// Initialize when the page loads
+document.addEventListener('DOMContentLoaded', initAutocomplete); 

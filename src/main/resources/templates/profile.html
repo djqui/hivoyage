@@ -16,27 +16,32 @@
     <!-- CSRF Tokens -->
     <meta name="_csrf" th:if="${_csrf != null}" th:content="${_csrf.token}"/>
     <meta name="_csrf_header" th:if="${_csrf != null}" th:content="${_csrf.headerName}"/>
+    
+    <!-- Context Path -->
+    <script th:inline="javascript">
+        const CONTEXT_PATH = [[@{/}]];
+    </script>
 </head>
 <body>
     <header>
         <div class="logo">
-            <a href="/user/homepage">HiVoyage</a>
+            <a th:href="@{/user/homepage}">HiVoyage</a>
         </div>
         
         <nav class="header-wrapper">
             <ul class="header-nav">
-                <li><a href="/user/homepage">Dashboard</a></li>
-                <li><a href="/user/trip-summary">Trip Summary</a></li>
+                <li><a th:href="@{/user/homepage}">Dashboard</a></li>
+                <li><a th:href="@{/user/trip-summary}">Trip Summary</a></li>
                 <li class="dropdown">
-                    <a href="#" class="dropdown-icon">
+                    <a th:href="@{#}" class="dropdown-icon">
                         <img th:if="${user != null && user.profilePicture != null}" th:src="@{'/uploads/profile-pictures/' + ${user.profilePicture}}" 
                              alt="Profile Picture" class="profile-picture-small">
                         <i th:unless="${user != null && user.profilePicture != null}" class="fas fa-user"></i>
                     </a>
                     <div class="dropdown-content">
                         <p th:if="${user != null}"> Hello, <span th:text="${user != null ? user.username : 'Guest'}"></span>!</p>
-                        <a href="/user/profile">Profile</a>
-                        <a href="/logout">Logout</a>
+                        <a th:href="@{/user/profile}">Profile</a>
+                        <a th:href="@{/logout}">Logout</a>
                     </div>
                 </li>
             </ul>
@@ -57,7 +62,7 @@
             <div class="profile-picture-section">
                 <img th:if="${user.profilePicture}" th:src="@{'/uploads/profile-pictures/' + ${user.profilePicture}}" 
                      alt="Profile Picture" class="profile-picture">
-                <img th:unless="${user.profilePicture}" src="/images/default-profile.png" 
+                <img th:unless="${user.profilePicture}" th:src="@{/images/default-profile.png}" 
                      alt="Default Profile Picture" class="profile-picture">
                 
                 <form th:action="@{/user/profile/picture}" method="post" enctype="multipart/form-data">
@@ -114,23 +119,10 @@
     <!-- Use the actual API key as in tripdetails.html -->
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCnA7J-Iz0f5A3cr8tRDrR-HcB8K-J9IAM&libraries=places"></script>
     <script>
-        function initProfileLocationAutocomplete() {
-            const locationInput = document.getElementById('location');
-            if (!locationInput) return;
-            const autocomplete = new google.maps.places.Autocomplete(locationInput, {
-                types: ['geocode'],
-                fields: ['formatted_address', 'geometry']
-            });
-            autocomplete.addListener('place_changed', function() {
-                const place = autocomplete.getPlace();
-                if (place.geometry && place.formatted_address) {
-                    locationInput.value = place.formatted_address;
-                }
-            });
-        }
-        document.addEventListener('DOMContentLoaded', function() {
-            initProfileLocationAutocomplete();
-        });
+        // Initialize Google Places Autocomplete
+        // The script block has been moved to profile.js
+        // function initProfileLocationAutocomplete() {...}
+        // document.addEventListener('DOMContentLoaded', function() {...});
     </script>
 </body>
 </html> 

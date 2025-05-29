@@ -52,13 +52,13 @@ form.addEventListener('submit', function(e) {
         formData.set('profilePicture', blob, 'cropped-image.png');
         
         // Send the data to the server using fetch
-        fetch(form.action, {
+        fetch(CONTEXT_PATH + 'user/profile/picture', {
             method: 'POST',
             body: formData
         })
         .then(response => {
             if (response.ok) {
-                window.location.href = '/user/profile';
+                window.location.href = `${CONTEXT_PATH}user/profile`;
             } else {
                 throw new Error('Image upload failed');
             }
@@ -68,4 +68,22 @@ form.addEventListener('submit', function(e) {
             alert('Failed to upload image: ' + error.message);
         });
     }, 'image/png');
+});
+
+function initProfileLocationAutocomplete() {
+    const locationInput = document.getElementById('location');
+    if (!locationInput) return;
+    const autocomplete = new google.maps.places.Autocomplete(locationInput, {
+        types: ['geocode'],
+        fields: ['formatted_address', 'geometry']
+    });
+    autocomplete.addListener('place_changed', function() {
+        const place = autocomplete.getPlace();
+        if (place.geometry && place.formatted_address) {
+            locationInput.value = place.formatted_address;
+        }
+    });
+}
+document.addEventListener('DOMContentLoaded', function() {
+    initProfileLocationAutocomplete();
 }); 

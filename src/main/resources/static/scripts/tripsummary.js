@@ -22,7 +22,7 @@ function hideLoading() {
 
 async function updateMissingCoordinates() {
     try {
-        const response = await fetch('/api/trips/update-coordinates');
+        const response = await fetch(`${CONTEXT_PATH}api/trips/update-coordinates`);
         if (!response.ok) {
             console.warn('Failed to update coordinates:', await response.text());
         }
@@ -119,7 +119,7 @@ function initializeMap() {
 
 async function fetchTripData() {
     try {
-        const response = await fetch('/api/trips/summary');
+        const response = await fetch(`${CONTEXT_PATH}api/trips/summary`);
         if (!response.ok) {
             throw new Error('Failed to fetch trip data');
         }

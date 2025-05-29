@@ -82,10 +82,19 @@ public class TripService {
             log.warn("Cannot save trip: Missing dates for user: {}", user.getEmail());
             throw new IllegalStateException("Start and end dates are required");
         }
-        
-        if (trip.getStartDate().isBefore(today)) {
-            log.warn("Cannot save trip: Start date is in the past for user: {}", user.getEmail());
-            throw new IllegalStateException("Cannot create trips with start dates in the past");
+        if (trip.getId() != null) {
+            // Editing an existing trip: fetch the original
+            Trip original = tripRepo.findById(trip.getId()).orElse(null);
+            if (original != null && !original.getStartDate().equals(trip.getStartDate()) && trip.getStartDate().isBefore(today)) {
+                log.warn("Cannot update trip: Attempt to move start date into the past for user: {}", user.getEmail());
+                throw new IllegalStateException("Cannot set start date in the past");
+            }
+        } else {
+            // Creating a new trip
+            if (trip.getStartDate().isBefore(today)) {
+                log.warn("Cannot save trip: Start date is in the past for user: {}", user.getEmail());
+                throw new IllegalStateException("Cannot create trips with start dates in the past");
+            }
         }
         
         if (trip.getEndDate().isBefore(trip.getStartDate())) {
@@ -96,6 +105,9 @@ public class TripService {
         // Prevent exact duplicate trip (same destination, start, and end date)
         List<Trip> existingTrips = tripRepo.findByUser(user);
         for (Trip existingTrip : existingTrips) {
+            // Skip the trip being edited
+            if (existingTrip.getId() != null && trip.getId() != null && existingTrip.getId().equals(trip.getId())) continue;
+
             if (existingTrip.getDestination().equalsIgnoreCase(trip.getDestination()) &&
                 existingTrip.getStartDate() != null && existingTrip.getEndDate() != null &&
                 existingTrip.getStartDate().isEqual(trip.getStartDate()) &&

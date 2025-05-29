@@ -14,7 +14,7 @@
 	    
 	    <nav class="header-wrapper">
 	        <ul class="header-nav">
-	            <li><a href="/welcome">Home</a></li>
+	            <li><a th:href="@{/welcome}">Home</a></li>
 	            <!-- <li><a href="/about">About</a></li> -->
 	        </ul>
 	    </nav>
@@ -50,8 +50,8 @@
 			<input type="password" name="password" placeholder="Password" required />
 			<button type="submit">Login</button>
 		</form>
-		<a href="/signup"> Don't have an account yet?</a>
-		<a href="/forgotpassword"> Forgot your Password?</a>
+		<a th:href="@{/signup}"> Don't have an account yet?</a>
+		<a th:href="@{/forgotpassword}"> Forgot your Password?</a>
 	</div>
 
 </body>
